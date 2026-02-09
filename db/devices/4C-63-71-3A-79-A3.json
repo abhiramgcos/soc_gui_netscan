@@ -1,0 +1,18 @@
+{
+  "mac_address": "4C:63:71:3A:79:A3",
+  "ip_address": "15.10.2.60",
+  "hostname": null,
+  "vendor": "Xiaomi Communications",
+  "os_name": null,
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 61,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T06:16:58.611980+00:00",
+  "last_seen": "2026-02-09T06:16:58.677180+00:00",
+  "tags": [],
+  "ports": []
+}

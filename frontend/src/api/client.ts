@@ -9,6 +9,7 @@ import type {
   ScanCreateRequest,
   ScanDetail,
   ScanListResponse,
+  SubnetDetectionResponse,
   Tag,
 } from '../types';
 
@@ -70,6 +71,11 @@ export const tagsApi = {
 /* ── Dashboard ─────────────────────────────── */
 export const dashboardApi = {
   stats: () => request<DashboardStats>('/dashboard/stats'),
+};
+
+/* ── Network ───────────────────────────────── */
+export const networkApi = {
+  detectSubnets: () => request<SubnetDetectionResponse>('/network/subnets'),
 };
 
 /* ── Export ─────────────────────────────────── */

@@ -1,0 +1,28 @@
+{
+  "mac_address": "6C:3C:7C:F6:2C:93",
+  "ip_address": "15.10.0.150",
+  "hostname": null,
+  "vendor": "Canon",
+  "os_name": "Canon MF1238 printer",
+  "os_family": "embedded",
+  "os_accuracy": 96,
+  "os_cpe": "cpe:/h:canon:mf1238",
+  "is_up": true,
+  "response_time_ms": 2,
+  "firmware_url": null,
+  "open_port_count": 1,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.636129+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 631,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "ipp",
+      "service_version": null,
+      "service_product": "CANON HTTP Server",
+      "service_cpe": null
+    }
+  ]
+}

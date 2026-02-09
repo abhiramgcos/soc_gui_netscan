@@ -1,0 +1,18 @@
+{
+  "mac_address": "D0:53:49:09:7A:FF",
+  "ip_address": "15.10.4.157",
+  "hostname": null,
+  "vendor": "Liteon Technology",
+  "os_name": "Microsoft Windows 10 1709 - 21H2",
+  "os_family": "Windows",
+  "os_accuracy": 100,
+  "os_cpe": "cpe:/o:microsoft:windows_10",
+  "is_up": true,
+  "response_time_ms": 4,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.855260+00:00",
+  "tags": [],
+  "ports": []
+}

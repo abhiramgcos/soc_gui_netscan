@@ -1,0 +1,73 @@
+{
+  "mac_address": "98:90:96:C1:A2:99",
+  "ip_address": "15.10.0.15",
+  "hostname": null,
+  "vendor": "Dell",
+  "os_name": null,
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 6,
+  "firmware_url": null,
+  "open_port_count": 6,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.625881+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 445,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "microsoft-ds",
+      "service_version": null,
+      "service_product": "Windows 8.1 Pro 9600 microsoft-ds",
+      "service_cpe": "cpe:/o:microsoft:windows"
+    },
+    {
+      "port_number": 554,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "rtsp",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 3389,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "ms-wbt-server",
+      "service_version": null,
+      "service_product": "Microsoft Terminal Services",
+      "service_cpe": "cpe:/o:microsoft:windows"
+    },
+    {
+      "port_number": 5357,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": "2.0",
+      "service_product": "Microsoft HTTPAPI httpd",
+      "service_cpe": "cpe:/o:microsoft:windows"
+    },
+    {
+      "port_number": 9001,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "hadoop-tasktracker",
+      "service_version": "10.0.20",
+      "service_product": "Apache Hadoop",
+      "service_cpe": "cpe:/a:mortbay:jetty:10.0.20"
+    },
+    {
+      "port_number": 32769,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "filenet-rpc",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    }
+  ]
+}

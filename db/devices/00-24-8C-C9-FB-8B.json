@@ -1,0 +1,109 @@
+{
+  "mac_address": "00:24:8C:C9:FB:8B",
+  "ip_address": "15.10.3.184",
+  "hostname": null,
+  "vendor": "ASUSTek Computer",
+  "os_name": "Microsoft Windows Vista SP2 or Windows 7 or Windows Server 2008 R2 or Windows 8.1",
+  "os_family": "Windows",
+  "os_accuracy": 100,
+  "os_cpe": "cpe:/o:microsoft:windows_server_2008:r2",
+  "is_up": true,
+  "response_time_ms": 105,
+  "firmware_url": null,
+  "open_port_count": 10,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.787123+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 135,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 445,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 554,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 2222,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 2869,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 10243,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 49152,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 49153,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 49155,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 49156,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    }
+  ]
+}

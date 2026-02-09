@@ -1,0 +1,18 @@
+{
+  "mac_address": "30:03:C8:8D:E9:43",
+  "ip_address": "15.10.5.171",
+  "hostname": null,
+  "vendor": "Cloud Network Technology Singapore PTE.",
+  "os_name": null,
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 5,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.929405+00:00",
+  "tags": [],
+  "ports": []
+}

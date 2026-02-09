@@ -1,0 +1,55 @@
+{
+  "mac_address": "AC:F2:3C:15:3C:C9",
+  "ip_address": "15.10.2.130",
+  "hostname": null,
+  "vendor": null,
+  "os_name": "Microsoft Windows 10 - 11",
+  "os_family": "Windows",
+  "os_accuracy": 87,
+  "os_cpe": "cpe:/o:microsoft:windows_10",
+  "is_up": true,
+  "response_time_ms": 7,
+  "firmware_url": null,
+  "open_port_count": 4,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.696201+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 1036,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "tcpwrapped",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 1039,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "sbl",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 1041,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "danf-ak2",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 1046,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "wfremotertm",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    }
+  ]
+}

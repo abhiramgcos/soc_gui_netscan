@@ -1,0 +1,18 @@
+{
+  "mac_address": "EC:AA:A0:15:B7:0B",
+  "ip_address": "15.10.5.24",
+  "hostname": null,
+  "vendor": "Pegatron",
+  "os_name": "Microsoft Windows 10 1803",
+  "os_family": "Windows",
+  "os_accuracy": 97,
+  "os_cpe": "cpe:/o:microsoft:windows_10",
+  "is_up": true,
+  "response_time_ms": 2,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.892009+00:00",
+  "tags": [],
+  "ports": []
+}

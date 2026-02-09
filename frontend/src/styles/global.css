@@ -755,6 +755,79 @@ a:hover {
   flex: 1;
 }
 
+/* ── Subnet Picker ──────────────────────────── */
+.subnet-picker {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.subnet-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.subnet-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  font-size: 13px;
+  min-width: 160px;
+}
+
+.subnet-chip:hover {
+  border-color: var(--accent-blue);
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.subnet-chip.active {
+  border-color: var(--accent-blue);
+  background: var(--accent-blue-dim);
+  color: var(--accent-blue);
+  box-shadow: 0 0 0 1px var(--accent-blue);
+}
+
+.subnet-chip.recommended {
+  border-color: var(--accent-green-dim);
+}
+
+.subnet-chip.recommended.active {
+  border-color: var(--accent-green);
+  background: var(--accent-green-dim);
+  color: var(--accent-green);
+  box-shadow: 0 0 0 1px var(--accent-green);
+}
+
+.subnet-chip-detail {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.subnet-rec-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  color: var(--accent-green);
+  background: var(--accent-green-dim);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+}
+
 /* ── Pipeline Stage Indicator ───────────────── */
 .pipeline-stages {
   display: flex;

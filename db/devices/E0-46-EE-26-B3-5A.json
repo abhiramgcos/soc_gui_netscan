@@ -1,0 +1,28 @@
+{
+  "mac_address": "E0:46:EE:26:B3:5A",
+  "ip_address": "15.10.3.51",
+  "hostname": null,
+  "vendor": "Netgear",
+  "os_name": "Netgear GS700T- or XS700T-series switch",
+  "os_family": "embedded",
+  "os_accuracy": 99,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 2,
+  "firmware_url": null,
+  "open_port_count": 1,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.750872+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 80,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    }
+  ]
+}

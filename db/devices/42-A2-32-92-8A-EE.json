@@ -1,0 +1,18 @@
+{
+  "mac_address": "42:A2:32:92:8A:EE",
+  "ip_address": "15.10.5.100",
+  "hostname": null,
+  "vendor": null,
+  "os_name": null,
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 67,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T05:59:15.866540+00:00",
+  "tags": [],
+  "ports": []
+}

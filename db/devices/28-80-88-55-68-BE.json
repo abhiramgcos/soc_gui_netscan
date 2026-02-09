@@ -1,0 +1,28 @@
+{
+  "mac_address": "28:80:88:55:68:BE",
+  "ip_address": "15.10.3.113",
+  "hostname": null,
+  "vendor": "Netgear",
+  "os_name": "Linux 3.2 - 4.14",
+  "os_family": "Linux",
+  "os_accuracy": 100,
+  "os_cpe": "cpe:/o:linux:linux_kernel:3",
+  "is_up": true,
+  "response_time_ms": 2,
+  "firmware_url": null,
+  "open_port_count": 1,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.767550+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 80,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": null,
+      "service_product": "Hydra/0.1.8",
+      "service_cpe": null
+    }
+  ]
+}

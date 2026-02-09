@@ -1,0 +1,28 @@
+{
+  "mac_address": "7C:5A:1C:49:71:21",
+  "ip_address": "15.10.0.1",
+  "hostname": "_gateway",
+  "vendor": "Sophos",
+  "os_name": "Android 7.1.2 (Linux 3.10)",
+  "os_family": "Android",
+  "os_accuracy": 91,
+  "os_cpe": "cpe:/o:google:android:7.1.2",
+  "is_up": true,
+  "response_time_ms": 87,
+  "firmware_url": null,
+  "open_port_count": 1,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.622219+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 53,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "domain",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    }
+  ]
+}

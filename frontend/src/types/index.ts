@@ -140,6 +140,28 @@ export interface ScanCreateRequest {
   description?: string;
 }
 
+export interface SubnetInfo {
+  interface: string;
+  ip_address: string;
+  cidr: string;
+  prefix_length: number;
+  num_hosts: number;
+  is_private: boolean;
+}
+
+export interface SubnetDetectionResponse {
+  subnets: SubnetInfo[];
+  recommended: string | null;
+  gateway: string | null;
+  all_interfaces: {
+    interface: string;
+    ip_address: string;
+    cidr: string;
+    prefix_length: number;
+    is_loopback: boolean;
+  }[];
+}
+
 export interface WSMessage {
   type: string;
   scan_id?: string;

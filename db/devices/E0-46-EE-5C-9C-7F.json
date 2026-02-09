@@ -1,0 +1,18 @@
+{
+  "mac_address": "E0:46:EE:5C:9C:7F",
+  "ip_address": "15.10.4.174",
+  "hostname": null,
+  "vendor": "Netgear",
+  "os_name": "OpenWrt Chaos Calmer 15.05 (Linux 3.18) or Designated Driver (Linux 4.1 or 4.4)",
+  "os_family": "Linux",
+  "os_accuracy": 100,
+  "os_cpe": "cpe:/o:linux:linux_kernel:3.18",
+  "is_up": true,
+  "response_time_ms": 2,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.863589+00:00",
+  "tags": [],
+  "ports": []
+}

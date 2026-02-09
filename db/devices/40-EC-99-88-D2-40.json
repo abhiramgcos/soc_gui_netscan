@@ -1,0 +1,18 @@
+{
+  "mac_address": "40:EC:99:88:D2:40",
+  "ip_address": "15.10.4.41",
+  "hostname": null,
+  "vendor": "Intel Corporate",
+  "os_name": "Microsoft Windows 11 21H2",
+  "os_family": "Windows",
+  "os_accuracy": 91,
+  "os_cpe": "cpe:/o:microsoft:windows_11",
+  "is_up": true,
+  "response_time_ms": 10,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.816566+00:00",
+  "tags": [],
+  "ports": []
+}

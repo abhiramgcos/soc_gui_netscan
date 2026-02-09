@@ -13,6 +13,7 @@ asyncio.gather(), semaphores, and per-host timeouts.
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import re
 import shutil
 import xml.etree.ElementTree as ET
@@ -93,23 +94,90 @@ def _find_binary(name: str) -> str:
 
 
 # ────────────────────────────────────────────────
+# Helper: estimate target size for dynamic timeouts
+# ────────────────────────────────────────────────
+
+def _estimate_host_count(target: str) -> int:
+    """Estimate the number of hosts in a target spec.
+
+    Handles CIDR (192.168.1.0/24), single IPs, and ranges.
+    Returns a conservative estimate used for timeout scaling.
+    """
+    target = target.strip()
+    try:
+        net = ipaddress.IPv4Network(target, strict=False)
+        return max(net.num_addresses - 2, 1)  # subtract network + broadcast
+    except ValueError:
+        pass
+    # Range like 10.0.0.1-50
+    if "-" in target:
+        return 256  # assume small range
+    # Single host or hostname
+    return 1
+
+
+def _ping_sweep_timeout(target: str, base: int = 120) -> int:
+    """Calculate a dynamic timeout for the ping sweep based on target size."""
+    hosts = _estimate_host_count(target)
+    if hosts <= 1:
+        return base
+    if hosts <= 254:       # /24
+        return max(base, 180)
+    if hosts <= 510:       # /23
+        return max(base, 300)
+    if hosts <= 2046:      # /21
+        return max(base, 600)
+    # Anything bigger
+    return max(base, 900)
+
+
+# ────────────────────────────────────────────────
 # STAGE 1 — nmap Ping Sweep
 # ────────────────────────────────────────────────
 
 async def stage1_ping_sweep(
     target: str,
-    timeout: int = 120,
+    timeout: int | None = None,
     on_progress=None,
 ) -> list[DiscoveredHost]:
     """
     Run nmap -sn (ping sweep) to find live hosts.
     Returns a list of DiscoveredHost with ip + basic info.
+
+    Uses ARP ping (-PR) for local-network speed, plus ICMP echo
+    as fallback, with aggressive timing and dynamic timeout.
     """
+    if timeout is None:
+        timeout = _ping_sweep_timeout(target)
+
+    host_count = _estimate_host_count(target)
     nmap = _find_binary("nmap")
-    cmd = ["sudo", nmap, "-sn", "-PE", "-PP", "-PM", "-oX", "-", target]
+
+    # Build optimised nmap command
+    cmd = [
+        "sudo", nmap,
+        "-sn",             # ping sweep only
+        "-PR",             # ARP ping  (fastest for local subnets)
+        "-PE",             # ICMP echo (fallback for remote)
+        "-T4",             # aggressive timing template
+        "--max-retries", "1",
+        "--min-rate", "300" if host_count > 64 else "100",
+        "-oX", "-",
+    ]
+
+    # Parallel host-group for large scans
+    if host_count > 128:
+        cmd += ["--min-hostgroup", "64"]
+    if host_count > 512:
+        cmd += ["--min-hostgroup", "128"]
+
+    cmd.append(target)
 
     if on_progress:
-        await on_progress("Stage 1: Starting ping sweep", {"target": target})
+        await on_progress(
+            f"Stage 1: Starting ping sweep ({host_count} hosts, timeout {timeout}s)",
+            {"target": target, "estimated_hosts": host_count, "timeout": timeout},
+        )
 
     stdout, stderr, rc = await _run_cmd(cmd, timeout)
 
@@ -238,39 +306,61 @@ async def stage2_arp_lookup(
 
 
 # ────────────────────────────────────────────────
-# STAGE 3 — RustScan Port Scan (batched)
+# STAGE 3 — Port Scan (RustScan → nmap fallback)
 # ────────────────────────────────────────────────
 
-async def _rustscan_single(host: DiscoveredHost, semaphore: asyncio.Semaphore, batch_size: int, timeout: int) -> DiscoveredHost:
-    """RustScan top 1000 common ports on a single host."""
+async def _rustscan_single(
+    host: DiscoveredHost,
+    semaphore: asyncio.Semaphore,
+    batch_size: int,
+    timeout: int,
+) -> DiscoveredHost:
+    """RustScan top ports on a single host with short timeout + nmap fallback."""
     async with semaphore:
         rustscan = _find_binary("rustscan")
+
+        # RustScan phase — short timeout (30s)
+        rs_timeout = min(timeout, 30)
         cmd = [
             "sudo", rustscan,
             "-a", host.ip,
             "--top",
             "-b", str(batch_size),
             "--ulimit", "5000",
-            "--timeout", str(min(timeout * 1000, 300000)),
+            "--timeout", str(rs_timeout * 1000),
             "-g",  # greppable output
         ]
 
-        stdout, stderr, rc = await _run_cmd(cmd, timeout)
+        stdout, stderr, rc = await _run_cmd(cmd, rs_timeout + 5)
 
         if rc == 0 and stdout.strip():
-            # Parse greppable output: "ip -> [port1, port2, ...]"
             for line in stdout.strip().splitlines():
                 match = re.search(r"->\s*\[(.+?)\]", line)
                 if match:
                     ports_str = match.group(1)
-                    host.open_ports = [int(p.strip()) for p in ports_str.split(",") if p.strip().isdigit()]
+                    host.open_ports = [
+                        int(p.strip())
+                        for p in ports_str.split(",")
+                        if p.strip().isdigit()
+                    ]
 
-        # Fallback: nmap SYN scan top 1000 if rustscan fails
+        # Fallback: nmap SYN scan top 1000 — aggressive timing, short timeout
         if rc != 0 or not host.open_ports:
             nmap = _find_binary("nmap")
-            cmd = ["sudo", nmap, "-sS", "--top-ports", "1000", "--min-rate", "3000", "-T4", "-oX", "-", host.ip]
-            stdout, stderr, rc = await _run_cmd(cmd, timeout)
-            if rc == 0:
+            nmap_timeout = min(timeout, 45)
+            cmd = [
+                "sudo", nmap,
+                "-sS",
+                "--top-ports", "1000",
+                "--min-rate", "5000",
+                "--max-retries", "1",
+                "-T4",
+                "--host-timeout", f"{nmap_timeout}s",
+                "-oX", "-",
+                host.ip,
+            ]
+            stdout, stderr, rc = await _run_cmd(cmd, nmap_timeout + 10)
+            if rc == 0 and stdout.strip():
                 try:
                     root = ET.fromstring(stdout)
                     for port_el in root.findall(".//port"):
@@ -288,22 +378,39 @@ async def _rustscan_single(host: DiscoveredHost, semaphore: asyncio.Semaphore, b
 async def stage3_port_scan(
     hosts: list[DiscoveredHost],
     batch_size: int | None = None,
-    concurrency: int = 10,
+    concurrency: int = 20,
     timeout_per_host: int | None = None,
     on_progress=None,
 ) -> list[DiscoveredHost]:
-    """Run RustScan on all hosts, 3000 parallel connections per host, batched."""
+    """Run port scans on all hosts with high concurrency and progress reporting."""
     if not hosts:
         return hosts
 
     batch_size = batch_size or settings.rustscan_batch_size
-    timeout_per_host = timeout_per_host or settings.scan_timeout_per_host
+    # Use a shorter per-host timeout for port scanning (not the global one)
+    timeout_per_host = min(timeout_per_host or settings.scan_timeout_per_host, 60)
 
     if on_progress:
-        await on_progress(f"Stage 3: Port scanning {len(hosts)} hosts (top 1000 ports)", {"count": len(hosts)})
+        await on_progress(
+            f"Stage 3: Port scanning {len(hosts)} hosts (top 1000 ports, {concurrency} parallel)",
+            {"count": len(hosts)},
+        )
 
     sem = asyncio.Semaphore(concurrency)
-    tasks = [_rustscan_single(h, sem, batch_size, timeout_per_host) for h in hosts]
+    completed = [0]  # mutable counter for progress
+
+    async def _scan_with_progress(host: DiscoveredHost) -> DiscoveredHost:
+        result = await _rustscan_single(host, sem, batch_size, timeout_per_host)
+        completed[0] += 1
+        # Report progress every 10 hosts or at the end
+        if on_progress and (completed[0] % 10 == 0 or completed[0] == len(hosts)):
+            await on_progress(
+                f"Stage 3: Scanned {completed[0]}/{len(hosts)} hosts",
+                {"completed": completed[0], "total": len(hosts)},
+            )
+        return result
+
+    tasks = [_scan_with_progress(h) for h in hosts]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     scanned = []
@@ -315,7 +422,6 @@ async def stage3_port_scan(
         elif isinstance(r, Exception):
             log.warning("port_scan_error", error=str(r))
 
-    # Filter: only pass hosts with open ports to stage 4
     with_ports = [h for h in scanned if h.open_ports]
 
     if on_progress:

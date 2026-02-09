@@ -1,0 +1,18 @@
+{
+  "mac_address": "14:D4:24:EB:F4:3F",
+  "ip_address": "15.10.4.54",
+  "hostname": null,
+  "vendor": "AzureWave Technology",
+  "os_name": "Microsoft Windows 11 21H2",
+  "os_family": "Windows",
+  "os_accuracy": 91,
+  "os_cpe": "cpe:/o:microsoft:windows_11",
+  "is_up": true,
+  "response_time_ms": 6,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.824067+00:00",
+  "tags": [],
+  "ports": []
+}

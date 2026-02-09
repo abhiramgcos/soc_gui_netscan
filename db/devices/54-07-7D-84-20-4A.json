@@ -1,0 +1,28 @@
+{
+  "mac_address": "54:07:7D:84:20:4A",
+  "ip_address": "15.10.3.71",
+  "hostname": null,
+  "vendor": "Netgear",
+  "os_name": "Linux 4.19",
+  "os_family": "Linux",
+  "os_accuracy": 100,
+  "os_cpe": "cpe:/o:linux:linux_kernel:4.19",
+  "is_up": true,
+  "response_time_ms": 6,
+  "firmware_url": null,
+  "open_port_count": 1,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.758239+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 80,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    }
+  ]
+}

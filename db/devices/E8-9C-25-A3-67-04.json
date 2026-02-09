@@ -1,0 +1,18 @@
+{
+  "mac_address": "E8:9C:25:A3:67:04",
+  "ip_address": "15.10.5.5",
+  "hostname": null,
+  "vendor": "ASUSTek Computer",
+  "os_name": "Microsoft Windows 10 1703",
+  "os_family": "Windows",
+  "os_accuracy": 99,
+  "os_cpe": "cpe:/o:microsoft:windows_10",
+  "is_up": true,
+  "response_time_ms": 35,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.883716+00:00",
+  "tags": [],
+  "ports": []
+}

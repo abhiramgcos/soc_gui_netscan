@@ -1,0 +1,37 @@
+{
+  "mac_address": "B0:83:FE:8B:6B:98",
+  "ip_address": "15.10.1.230",
+  "hostname": null,
+  "vendor": "Dell",
+  "os_name": "Linux 3.2 - 4.14",
+  "os_family": "Linux",
+  "os_accuracy": 100,
+  "os_cpe": "cpe:/o:linux:linux_kernel:3",
+  "is_up": true,
+  "response_time_ms": 6,
+  "firmware_url": null,
+  "open_port_count": 2,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.652459+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 80,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": "2.4.7",
+      "service_product": "Apache httpd",
+      "service_cpe": "cpe:/a:apache:http_server:2.4.7"
+    },
+    {
+      "port_number": 8080,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": "2.4.7",
+      "service_product": "Apache httpd",
+      "service_cpe": "cpe:/a:apache:http_server:2.4.7"
+    }
+  ]
+}

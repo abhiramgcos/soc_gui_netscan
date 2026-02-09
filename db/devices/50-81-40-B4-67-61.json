@@ -1,0 +1,28 @@
+{
+  "mac_address": "50:81:40:B4:67:61",
+  "ip_address": "15.10.3.17",
+  "hostname": null,
+  "vendor": "HP",
+  "os_name": "Microsoft Windows 10 1803",
+  "os_family": "Windows",
+  "os_accuracy": 92,
+  "os_cpe": "cpe:/o:microsoft:windows_10",
+  "is_up": true,
+  "response_time_ms": 1,
+  "firmware_url": null,
+  "open_port_count": 1,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.741088+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 5357,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    }
+  ]
+}

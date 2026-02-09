@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Radar,
@@ -8,11 +8,12 @@ import {
   Trash2,
   Download,
   X,
+  Wifi,
 } from 'lucide-react';
-import { scansApi, exportApi } from '../../api/client';
+import { scansApi, exportApi, networkApi } from '../../api/client';
 import { useFetch, usePolling } from '../../hooks/useData';
 import { formatRelative, formatDuration } from '../../utils/formatters';
-import type { ScanListResponse, ScanType } from '../../types';
+import type { ScanListResponse, ScanType, SubnetInfo } from '../../types';
 
 function ScanList() {
   const navigate = useNavigate();
@@ -219,6 +220,42 @@ function ScanCreateForm({ onSubmit, onCancel, creating }: CreateFormProps) {
   const [target, setTarget] = useState('');
   const [scanType, setScanType] = useState<ScanType>('subnet');
   const [name, setName] = useState('');
+  const [subnets, setSubnets] = useState<SubnetInfo[]>([]);
+  const [recommended, setRecommended] = useState<string | null>(null);
+  const [gateway, setGateway] = useState<string | null>(null);
+  const [detecting, setDetecting] = useState(false);
+  const [detected, setDetected] = useState(false);
+  const [detectError, setDetectError] = useState<string | null>(null);
+
+  // Auto-detect subnets on mount
+  useEffect(() => {
+    detectSubnets();
+  }, []);
+
+  const detectSubnets = async () => {
+    setDetecting(true);
+    setDetectError(null);
+    try {
+      const result = await networkApi.detectSubnets();
+      setSubnets(result.subnets);
+      setRecommended(result.recommended);
+      setGateway(result.gateway);
+      setDetected(true);
+      // Auto-fill the recommended subnet if target is empty
+      if (!target && result.recommended) {
+        setTarget(result.recommended);
+      }
+    } catch (e) {
+      setDetectError(e instanceof Error ? e.message : 'Detection failed');
+    } finally {
+      setDetecting(false);
+    }
+  };
+
+  const handleSubnetSelect = (cidr: string) => {
+    setTarget(cidr);
+    setScanType('subnet');
+  };
 
   return (
     <div className="scan-launcher">
@@ -228,15 +265,79 @@ function ScanCreateForm({ onSubmit, onCancel, creating }: CreateFormProps) {
           <X size={16} />
         </button>
       </div>
+
+      {/* ── Detected subnets ─────────────── */}
+      {detected && subnets.length > 0 && (
+        <div className="subnet-picker mb-lg">
+          <div className="flex items-center gap-sm mb-sm">
+            <Wifi size={14} style={{ color: 'var(--accent)' }} />
+            <span className="text-sm" style={{ fontWeight: 500 }}>
+              Detected Subnets
+            </span>
+            {gateway && (
+              <span className="text-sm text-muted" style={{ marginLeft: 'auto' }}>
+                Gateway: <span className="mono">{gateway}</span>
+              </span>
+            )}
+          </div>
+          <div className="subnet-chips">
+            {subnets.map((s) => (
+              <button
+                key={s.cidr}
+                className={`subnet-chip${target === s.cidr ? ' active' : ''}${s.cidr === recommended ? ' recommended' : ''}`}
+                onClick={() => handleSubnetSelect(s.cidr)}
+                title={`Interface: ${s.interface} — IP: ${s.ip_address} — ${s.num_hosts} hosts`}
+              >
+                <span className="mono" style={{ fontWeight: 500 }}>{s.cidr}</span>
+                <span className="subnet-chip-detail">
+                  {s.interface} · {s.num_hosts} hosts
+                  {s.cidr === recommended && <span className="subnet-rec-badge">recommended</span>}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {detecting && (
+        <div className="flex items-center gap-sm mb-lg text-muted text-sm">
+          <span className="spinner" style={{ width: 14, height: 14 }} />
+          Detecting network interfaces…
+        </div>
+      )}
+
+      {detectError && (
+        <div className="text-sm mb-lg" style={{ color: 'var(--danger)' }}>
+          Subnet detection failed: {detectError}
+        </div>
+      )}
+
       <div className="scan-launcher-form">
-        <div className="form-group">
+        <div className="form-group" style={{ position: 'relative' }}>
           <label className="form-label">Target</label>
-          <input
-            className="input input-mono"
-            placeholder="192.168.1.0/24 or 10.0.0.1"
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-          />
+          <div className="flex gap-xs">
+            <input
+              className="input input-mono"
+              placeholder="192.168.1.0/24 or 10.0.0.1"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={detectSubnets}
+              disabled={detecting}
+              title="Re-detect subnets"
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              {detecting ? (
+                <span className="spinner" style={{ width: 14, height: 14 }} />
+              ) : (
+                <Wifi size={14} />
+              )}
+              Detect
+            </button>
+          </div>
         </div>
         <div className="form-group" style={{ maxWidth: 180 }}>
           <label className="form-label">Type</label>

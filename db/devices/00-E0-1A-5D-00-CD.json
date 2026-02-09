@@ -1,0 +1,18 @@
+{
+  "mac_address": "00:E0:1A:5D:00:CD",
+  "ip_address": "15.10.2.222",
+  "hostname": null,
+  "vendor": "Comtec Systems.",
+  "os_name": null,
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 7,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.715727+00:00",
+  "tags": [],
+  "ports": []
+}

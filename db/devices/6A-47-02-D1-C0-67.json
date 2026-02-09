@@ -1,0 +1,18 @@
+{
+  "mac_address": "6A:47:02:D1:C0:67",
+  "ip_address": "15.10.5.156",
+  "hostname": "hp982021.auth.hpicorp.net.auth.hpicorp.net",
+  "vendor": null,
+  "os_name": null,
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 4,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T06:16:58.611980+00:00",
+  "last_seen": "2026-02-09T06:16:58.924020+00:00",
+  "tags": [],
+  "ports": []
+}

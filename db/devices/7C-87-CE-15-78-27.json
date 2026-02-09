@@ -1,0 +1,37 @@
+{
+  "mac_address": "7C:87:CE:15:78:27",
+  "ip_address": "15.10.3.182",
+  "hostname": null,
+  "vendor": "Espressif",
+  "os_name": "OSRAM Lightify ZigBee gateway",
+  "os_family": "embedded",
+  "os_accuracy": 89,
+  "os_cpe": "cpe:/h:osram:lightify",
+  "is_up": true,
+  "response_time_ms": 7,
+  "firmware_url": null,
+  "open_port_count": 2,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.784453+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 80,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "nagios-nsca",
+      "service_version": null,
+      "service_product": "Nagios NSCA",
+      "service_cpe": null
+    },
+    {
+      "port_number": 443,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "nagios-nsca",
+      "service_version": null,
+      "service_product": "Nagios NSCA",
+      "service_cpe": null
+    }
+  ]
+}

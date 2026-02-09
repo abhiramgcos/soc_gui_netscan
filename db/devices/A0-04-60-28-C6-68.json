@@ -1,0 +1,18 @@
+{
+  "mac_address": "A0:04:60:28:C6:68",
+  "ip_address": "15.10.5.121",
+  "hostname": null,
+  "vendor": "Netgear",
+  "os_name": "Linux 2.6.18 - 2.6.32",
+  "os_family": "Linux",
+  "os_accuracy": 99,
+  "os_cpe": "cpe:/o:linux:linux_kernel:2.6",
+  "is_up": true,
+  "response_time_ms": 12,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.913746+00:00",
+  "tags": [],
+  "ports": []
+}

@@ -1,0 +1,28 @@
+{
+  "mac_address": "B0:83:FE:9A:67:DF",
+  "ip_address": "15.10.1.10",
+  "hostname": null,
+  "vendor": "Dell",
+  "os_name": null,
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 2,
+  "firmware_url": null,
+  "open_port_count": 1,
+  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "last_seen": "2026-02-09T06:16:58.648274+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 4899,
+      "protocol": "tcp",
+      "state": "filtered",
+      "service_name": "radmin",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    }
+  ]
+}

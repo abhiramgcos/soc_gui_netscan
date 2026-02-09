@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nmap \
     arp-scan \
     net-tools \
+    iproute2 \
     iputils-ping \
     curl \
     gcc \
