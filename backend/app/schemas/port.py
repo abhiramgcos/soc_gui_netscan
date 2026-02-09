@@ -11,7 +11,7 @@ from pydantic import BaseModel
 class PortOut(BaseModel):
     """Port response."""
     id: uuid.UUID
-    host_id: uuid.UUID
+    host_id: str
     port_number: int
     protocol: str
     state: str

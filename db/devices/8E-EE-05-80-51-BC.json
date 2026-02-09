@@ -1,0 +1,18 @@
+{
+  "mac_address": "8E:EE:05:80:51:BC",
+  "ip_address": "192.168.1.44",
+  "hostname": "192-168-1-44.lan",
+  "vendor": null,
+  "os_name": null,
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 166,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+  "last_seen": "2026-02-09T03:35:26.074851+00:00",
+  "tags": [],
+  "ports": []
+}

@@ -217,9 +217,9 @@ function ScanDetail() {
                 <tbody>
                   {hosts.items.map((h) => (
                     <tr
-                      key={h.id}
+                      key={h.mac_address}
                       className="clickable-row"
-                      onClick={() => navigate(`/hosts/${h.id}`)}
+                      onClick={() => navigate(`/hosts/${encodeURIComponent(h.mac_address)}`)}
                     >
                       <td className="mono">{h.ip_address}</td>
                       <td>{h.hostname || '—'}</td>

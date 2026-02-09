@@ -14,7 +14,7 @@ function App() {
         <Route path="/scans" element={<ScanList />} />
         <Route path="/scans/:id" element={<ScanDetail />} />
         <Route path="/hosts" element={<HostTable />} />
-        <Route path="/hosts/:id" element={<HostDetail />} />
+        <Route path="/hosts/:mac" element={<HostDetail />} />
       </Routes>
     </Layout>
   );

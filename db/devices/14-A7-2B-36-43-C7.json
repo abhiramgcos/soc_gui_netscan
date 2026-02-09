@@ -1,0 +1,55 @@
+{
+  "mac_address": "14:A7:2B:36:43:C7",
+  "ip_address": "192.168.1.1",
+  "hostname": "_gateway",
+  "vendor": "currentoptronics Pvt.Ltd",
+  "os_name": "Linux 2.6.8 - 2.6.30",
+  "os_family": "Linux",
+  "os_accuracy": 100,
+  "os_cpe": "cpe:/o:linux:linux_kernel:2.6",
+  "is_up": true,
+  "response_time_ms": 2,
+  "firmware_url": null,
+  "open_port_count": 4,
+  "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+  "last_seen": "2026-02-09T03:35:26.056755+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 21,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "ftp",
+      "service_version": "1.9.4",
+      "service_product": "GNU Inetutils FTPd",
+      "service_cpe": "cpe:/a:gnu:inetutils:1.9.4"
+    },
+    {
+      "port_number": 53,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "domain",
+      "service_version": "2.80",
+      "service_product": "dnsmasq",
+      "service_cpe": "cpe:/a:thekelleys:dnsmasq:2.80"
+    },
+    {
+      "port_number": 80,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "tcpwrapped",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 443,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "tcpwrapped",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    }
+  ]
+}

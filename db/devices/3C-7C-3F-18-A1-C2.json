@@ -1,0 +1,127 @@
+{
+  "mac_address": "3C:7C:3F:18:A1:C2",
+  "ip_address": "192.168.1.9",
+  "hostname": "truenas.lan",
+  "vendor": "ASUSTek Computer",
+  "os_name": "Linux 4.15 - 5.19",
+  "os_family": "Linux",
+  "os_accuracy": 100,
+  "os_cpe": "cpe:/o:linux:linux_kernel:4",
+  "is_up": true,
+  "response_time_ms": 1,
+  "firmware_url": null,
+  "open_port_count": 12,
+  "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+  "last_seen": "2026-02-09T03:35:26.070084+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 53,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "domain",
+      "service_version": null,
+      "service_product": "Unbound",
+      "service_cpe": "cpe:/a:nlnetlabs:unbound"
+    },
+    {
+      "port_number": 80,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": null,
+      "service_product": "nginx",
+      "service_cpe": "cpe:/a:igor_sysoev:nginx"
+    },
+    {
+      "port_number": 111,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "rpcbind",
+      "service_version": "2-4",
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 139,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "netbios-ssn",
+      "service_version": "4",
+      "service_product": "Samba smbd",
+      "service_cpe": "cpe:/a:samba:samba:4"
+    },
+    {
+      "port_number": 443,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": null,
+      "service_product": "nginx",
+      "service_cpe": "cpe:/a:igor_sysoev:nginx"
+    },
+    {
+      "port_number": 445,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "netbios-ssn",
+      "service_version": "4",
+      "service_product": "Samba smbd",
+      "service_cpe": "cpe:/a:samba:samba:4"
+    },
+    {
+      "port_number": 4567,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "tram",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 5357,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": "0.6",
+      "service_product": "BaseHTTPServer",
+      "service_cpe": "cpe:/a:python:python:3.11.9"
+    },
+    {
+      "port_number": 6969,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "acmsoda",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 8443,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "https-alt",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 9090,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": "1.27.3",
+      "service_product": "nginx",
+      "service_cpe": "cpe:/a:igor_sysoev:nginx:1.27.3"
+    },
+    {
+      "port_number": 9091,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": "1.27.3",
+      "service_product": "nginx",
+      "service_cpe": "cpe:/a:igor_sysoev:nginx:1.27.3"
+    }
+  ]
+}

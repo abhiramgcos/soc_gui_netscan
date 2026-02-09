@@ -430,20 +430,43 @@ async def stage4_deep_scan(
     concurrency: int = 5,
     timeout_per_host: int | None = None,
     on_progress=None,
+    existing_hosts: dict[str, int] | None = None,
 ) -> list[DiscoveredHost]:
-    """Deep nmap scan on all hosts that have open ports."""
+    """Deep nmap scan on hosts that have open ports.
+    
+    If existing_hosts is provided (MAC → port_count), hosts whose MAC
+    matches and whose open port count is identical are skipped.
+    """
     if not hosts:
         return hosts
 
     timeout = timeout_per_host or settings.scan_timeout_per_host
-    targets = [h for h in hosts if h.open_ports]
+    candidates = [h for h in hosts if h.open_ports]
+
+    # Skip optimization: if a device already has the same number of open ports, skip deep scan
+    skipped = 0
+    targets = []
+    if existing_hosts:
+        for h in candidates:
+            mac = h.mac or f"00:00:{h.ip.replace('.', ':')[:8]}"
+            existing_count = existing_hosts.get(mac, -1)
+            if existing_count == len(h.open_ports) and existing_count > 0:
+                skipped += 1
+                log.info("stage4_skip", ip=h.ip, mac=mac, ports=existing_count)
+            else:
+                targets.append(h)
+    else:
+        targets = candidates
 
     if on_progress:
-        await on_progress(f"Stage 4: Deep scanning {len(targets)} hosts", {"count": len(targets)})
+        msg = f"Stage 4: Deep scanning {len(targets)} hosts"
+        if skipped:
+            msg += f" ({skipped} skipped — unchanged port count)"
+        await on_progress(msg, {"count": len(targets), "skipped": skipped})
 
     if not targets:
         if on_progress:
-            await on_progress("Stage 4: No hosts with open ports — skipping", {})
+            await on_progress("Stage 4: No hosts need deep scanning — all skipped or no open ports", {})
         return hosts
 
     sem = asyncio.Semaphore(concurrency)
@@ -483,6 +506,7 @@ async def stage4_deep_scan(
 async def run_full_pipeline(
     target: str,
     on_progress=None,
+    existing_hosts: dict[str, int] | None = None,
 ) -> list[DiscoveredHost]:
     """
     Execute the complete 4-stage pipeline:
@@ -505,7 +529,7 @@ async def run_full_pipeline(
     hosts = await stage3_port_scan(hosts, on_progress=on_progress)
 
     # Stage 4
-    hosts = await stage4_deep_scan(hosts, on_progress=on_progress)
+    hosts = await stage4_deep_scan(hosts, on_progress=on_progress, existing_hosts=existing_hosts)
 
     elapsed = (datetime.now(timezone.utc) - start).total_seconds()
     total_ports = sum(len(h.open_ports) for h in hosts)

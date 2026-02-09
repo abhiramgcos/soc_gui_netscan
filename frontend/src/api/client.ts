@@ -4,6 +4,7 @@ import type {
   DashboardStats,
   HostDetail,
   HostListResponse,
+  HostUpdate,
   Scan,
   ScanCreateRequest,
   ScanDetail,
@@ -47,11 +48,15 @@ export const hostsApi = {
     const qs = new URLSearchParams(params).toString();
     return request<HostListResponse>(`/hosts${qs ? `?${qs}` : ''}`);
   },
-  get: (id: string) => request<HostDetail>(`/hosts/${id}`),
-  addTag: (hostId: string, tagId: string) =>
-    request<void>(`/hosts/${hostId}/tags/${tagId}`, { method: 'POST' }),
-  removeTag: (hostId: string, tagId: string) =>
-    request<void>(`/hosts/${hostId}/tags/${tagId}`, { method: 'DELETE' }),
+  get: (mac: string) => request<HostDetail>(`/hosts/${encodeURIComponent(mac)}`),
+  update: (mac: string, data: HostUpdate) =>
+    request<HostDetail>(`/hosts/${encodeURIComponent(mac)}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  addTag: (mac: string, tagId: string) =>
+    request<void>(`/hosts/${encodeURIComponent(mac)}/tags/${tagId}`, { method: 'POST' }),
+  removeTag: (mac: string, tagId: string) =>
+    request<void>(`/hosts/${encodeURIComponent(mac)}/tags/${tagId}`, { method: 'DELETE' }),
+  exportDevices: () => request<{ exported: number; path: string }>('/hosts/export', { method: 'POST' }),
+  importDevices: () => request<{ imported: number }>('/hosts/import', { method: 'POST' }),
 };
 
 /* ── Tags ──────────────────────────────────── */

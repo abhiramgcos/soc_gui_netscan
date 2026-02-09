@@ -6,6 +6,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Upload,
+  Save,
   X,
 } from 'lucide-react';
 import { hostsApi, exportApi } from '../../api/client';
@@ -19,6 +21,7 @@ function HostTable() {
   const [search, setSearch] = useState('');
   const [osFilter, setOsFilter] = useState('');
   const [upFilter, setUpFilter] = useState<string>('');
+  const [exportMsg, setExportMsg] = useState<string | null>(null);
 
   const params: Record<string, string> = { page: String(page), page_size: '50' };
   if (search) params.search = search;
@@ -33,23 +36,53 @@ function HostTable() {
 
   usePolling(reload, 10000);
 
+  const handleExportDevices = async () => {
+    try {
+      const res = await hostsApi.exportDevices();
+      setExportMsg(`Exported ${res.exported} devices to db/devices/`);
+      setTimeout(() => setExportMsg(null), 4000);
+    } catch (e: unknown) {
+      setExportMsg(`Export failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      setTimeout(() => setExportMsg(null), 4000);
+    }
+  };
+
+  const handleImportDevices = async () => {
+    try {
+      const res = await hostsApi.importDevices();
+      setExportMsg(`Imported ${res.imported} devices from db/devices/`);
+      reload();
+      setTimeout(() => setExportMsg(null), 4000);
+    } catch (e: unknown) {
+      setExportMsg(`Import failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      setTimeout(() => setExportMsg(null), 4000);
+    }
+  };
+
   const totalPages = data ? Math.ceil(data.total / data.page_size) : 0;
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Discovered Hosts</h1>
+          <h1 className="page-title">Device Inventory</h1>
           <p className="page-subtitle">
-            {data ? `${data.total} hosts across all scans` : 'Loading...'}
+            {data ? `${data.total} devices` : 'Loading...'}
+            {exportMsg && <span style={{ marginLeft: 12, color: 'var(--accent-green)' }}>{exportMsg}</span>}
           </p>
         </div>
         <div className="flex gap-sm">
+          <button className="btn btn-secondary btn-sm" onClick={handleImportDevices}>
+            <Upload size={14} /> Import Device DB
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={handleExportDevices}>
+            <Save size={14} /> Save Device DB
+          </button>
           <a href={exportApi.hostsUrl('csv')} download className="btn btn-secondary btn-sm">
-            <Download size={14} /> Export CSV
+            <Download size={14} /> CSV
           </a>
           <a href={exportApi.hostsUrl('json')} download className="btn btn-secondary btn-sm">
-            <Download size={14} /> Export JSON
+            <Download size={14} /> JSON
           </a>
         </div>
       </div>
@@ -124,17 +157,18 @@ function HostTable() {
                     <th>MAC Address</th>
                     <th>Vendor</th>
                     <th>Operating System</th>
-                    <th>OS Accuracy</th>
+                    <th>Ports</th>
+                    <th>Firmware URL</th>
                     <th>Tags</th>
-                    <th>Discovered</th>
+                    <th>Last Seen</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.items.map((host) => (
                     <tr
-                      key={host.id}
+                      key={host.mac_address}
                       className="clickable-row"
-                      onClick={() => navigate(`/hosts/${host.id}`)}
+                      onClick={() => navigate(`/hosts/${encodeURIComponent(host.mac_address)}`)}
                     >
                       <td>
                         <span className={`badge badge-${host.is_up ? 'open' : 'closed'}`}>
@@ -153,23 +187,20 @@ function HostTable() {
                         )}
                       </td>
                       <td>
-                        {host.os_accuracy != null ? (
-                          <div className="flex items-center gap-sm">
-                            <div className="progress-bar" style={{ width: 40, height: 3 }}>
-                              <div
-                                className="progress-bar-fill"
-                                style={{
-                                  width: `${host.os_accuracy}%`,
-                                  background: host.os_accuracy >= 90
-                                    ? 'var(--accent-green)'
-                                    : host.os_accuracy >= 70
-                                    ? 'var(--accent-amber)'
-                                    : 'var(--accent-red)',
-                                }}
-                              />
-                            </div>
-                            <span className="text-sm text-muted">{host.os_accuracy}%</span>
-                          </div>
+                        <span className="mono text-sm">{host.open_port_count}</span>
+                      </td>
+                      <td className="text-sm" style={{ maxWidth: 180 }}>
+                        {host.firmware_url ? (
+                          <a
+                            href={host.firmware_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="truncate"
+                            style={{ display: 'block', color: 'var(--accent-blue)' }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {host.firmware_url}
+                          </a>
                         ) : '—'}
                       </td>
                       <td>
@@ -186,7 +217,7 @@ function HostTable() {
                           ))}
                         </div>
                       </td>
-                      <td className="text-sm text-muted">{formatRelative(host.discovered_at)}</td>
+                      <td className="text-sm text-muted">{formatRelative(host.last_seen)}</td>
                     </tr>
                   ))}
                 </tbody>

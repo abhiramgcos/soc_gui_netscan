@@ -42,10 +42,9 @@ export interface ScanListResponse {
 }
 
 export interface Host {
-  id: string;
-  scan_id: string;
+  mac_address: string;
+  scan_id: string | null;
   ip_address: string;
-  mac_address: string | null;
   hostname: string | null;
   vendor: string | null;
   os_name: string | null;
@@ -54,6 +53,8 @@ export interface Host {
   os_cpe: string | null;
   is_up: boolean;
   response_time_ms: number | null;
+  firmware_url: string | null;
+  open_port_count: number;
   discovered_at: string;
   last_seen: string;
   tags: Tag[];
@@ -61,6 +62,15 @@ export interface Host {
 
 export interface HostDetail extends Host {
   ports: Port[];
+}
+
+export interface HostUpdate {
+  hostname?: string | null;
+  vendor?: string | null;
+  os_name?: string | null;
+  os_family?: string | null;
+  firmware_url?: string | null;
+  ip_address?: string | null;
 }
 
 export interface HostListResponse {

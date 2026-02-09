@@ -37,31 +37,46 @@ async def _add_log(db: AsyncSession, scan_id: uuid.UUID, stage: int, message: st
 
 
 async def _persist_results(db: AsyncSession, scan: Scan, hosts: list[DiscoveredHost]):
-    """Write discovered hosts and ports to the database."""
+    """Upsert discovered hosts (keyed by MAC) and ports to the database."""
     total_ports = 0
 
     for dh in hosts:
-        host = Host(
-            scan_id=scan.id,
-            ip_address=dh.ip,
-            mac_address=dh.mac,
-            hostname=dh.hostname,
-            vendor=dh.vendor,
-            os_name=dh.os_name,
-            os_family=dh.os_family,
-            os_accuracy=dh.os_accuracy,
-            os_cpe=dh.os_cpe,
-            is_up=dh.is_up,
-            response_time_ms=dh.response_time_ms,
-            nmap_raw_xml=dh.nmap_xml,
-        )
-        db.add(host)
+        # Generate a deterministic MAC for hosts without one
+        mac = dh.mac or f"00:00:{dh.ip.replace('.', ':')[:8]}"
+
+        # Upsert: check if device already exists by MAC
+        result = await db.execute(select(Host).where(Host.mac_address == mac))
+        host = result.scalar_one_or_none()
+
+        if host is None:
+            host = Host(mac_address=mac)
+            db.add(host)
+
+        # Update fields from latest scan
+        host.scan_id = scan.id
+        host.ip_address = dh.ip
+        host.hostname = dh.hostname or host.hostname
+        host.vendor = dh.vendor or host.vendor
+        host.os_name = dh.os_name or host.os_name
+        host.os_family = dh.os_family or host.os_family
+        host.os_accuracy = dh.os_accuracy if dh.os_accuracy else host.os_accuracy
+        host.os_cpe = dh.os_cpe or host.os_cpe
+        host.is_up = dh.is_up
+        host.response_time_ms = dh.response_time_ms
+        host.nmap_raw_xml = dh.nmap_xml or host.nmap_raw_xml
+        host.last_seen = datetime.now(timezone.utc)
+        host.open_port_count = len(dh.open_ports)
+
         await db.flush()
+
+        # Delete old ports for this host and write fresh ones
+        from sqlalchemy import delete
+        await db.execute(delete(Port).where(Port.host_id == mac))
 
         # Ports from deep scan services
         for port_num, svc in dh.services.items():
             port = Port(
-                host_id=host.id,
+                host_id=mac,
                 port_number=svc.get("port", port_num),
                 protocol=svc.get("protocol", "tcp"),
                 state=svc.get("state", "open"),
@@ -79,7 +94,7 @@ async def _persist_results(db: AsyncSession, scan: Scan, hosts: list[DiscoveredH
         if not dh.services and dh.open_ports:
             for pn in dh.open_ports:
                 port = Port(
-                    host_id=host.id,
+                    host_id=mac,
                     port_number=pn,
                     protocol="tcp",
                     state="open",
@@ -89,6 +104,12 @@ async def _persist_results(db: AsyncSession, scan: Scan, hosts: list[DiscoveredH
 
     await db.flush()
     return total_ports
+
+
+async def _load_existing_hosts(db: AsyncSession) -> dict[str, int]:
+    """Load MAC → open_port_count mapping from existing host table for stage-4 skip."""
+    result = await db.execute(select(Host.mac_address, Host.open_port_count))
+    return {row[0]: row[1] for row in result.all()}
 
 
 async def _process_scan(scan_id_str: str):
@@ -151,14 +172,17 @@ async def _process_scan(scan_id_str: str):
 
             target = scan.target
 
+            # Load existing device inventory for stage-4 skip optimization
+            existing_hosts = await _load_existing_hosts(db)
+
             scan.status = ScanStatus.RUNNING
             scan.started_at = datetime.now(timezone.utc)
             scan.current_stage = 0
             await db.commit()
-            log.info("scan_marked_running", scan_id=scan_id_str, target=target)
+            log.info("scan_marked_running", scan_id=scan_id_str, target=target, known_devices=len(existing_hosts))
 
-        # Execute the 4-stage pipeline
-        hosts = await run_full_pipeline(target, on_progress=on_progress)
+        # Execute the 4-stage pipeline (existing_hosts enables stage-4 skip)
+        hosts = await run_full_pipeline(target, on_progress=on_progress, existing_hosts=existing_hosts)
         log.info("pipeline_done", scan_id=scan_id_str, hosts=len(hosts))
 
         # Persist results in a new session

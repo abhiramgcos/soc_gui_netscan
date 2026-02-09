@@ -1,0 +1,18 @@
+{
+  "mac_address": "74:CB:F3:5B:DB:F7",
+  "ip_address": "192.168.1.13",
+  "hostname": "lava-blaze.lan",
+  "vendor": "Lava international limited",
+  "os_name": null,
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 259,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+  "last_seen": "2026-02-09T03:35:26.073976+00:00",
+  "tags": [],
+  "ports": []
+}

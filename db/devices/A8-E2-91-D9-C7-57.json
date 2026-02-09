@@ -1,0 +1,46 @@
+{
+  "mac_address": "A8:E2:91:D9:C7:57",
+  "ip_address": "192.168.1.59",
+  "hostname": "anoop-jeytson-suiper.lan",
+  "vendor": null,
+  "os_name": "Linux 4.15 - 5.19",
+  "os_family": "Linux",
+  "os_accuracy": 100,
+  "os_cpe": "cpe:/o:linux:linux_kernel:4",
+  "is_up": true,
+  "response_time_ms": 163,
+  "firmware_url": null,
+  "open_port_count": 3,
+  "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+  "last_seen": "2026-02-09T03:35:26.075689+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 22,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "ssh",
+      "service_version": "8.9p1 Ubuntu 3ubuntu0.13",
+      "service_product": "OpenSSH",
+      "service_cpe": "cpe:/a:openbsd:openssh:8.9p1"
+    },
+    {
+      "port_number": 111,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "rpcbind",
+      "service_version": "2-4",
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 631,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "ipp",
+      "service_version": "2.4",
+      "service_product": "CUPS",
+      "service_cpe": "cpe:/a:apple:cups:2.4"
+    }
+  ]
+}

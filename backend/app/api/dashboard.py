@@ -22,8 +22,8 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db)):
     completed_scans = (await db.execute(select(func.count(Scan.id)).where(Scan.status == ScanStatus.COMPLETED))).scalar() or 0
     failed_scans = (await db.execute(select(func.count(Scan.id)).where(Scan.status == ScanStatus.FAILED))).scalar() or 0
 
-    total_hosts = (await db.execute(select(func.count(Host.id)))).scalar() or 0
-    live_hosts = (await db.execute(select(func.count(Host.id)).where(Host.is_up == True))).scalar() or 0  # noqa: E712
+    total_hosts = (await db.execute(select(func.count(Host.mac_address)))).scalar() or 0
+    live_hosts = (await db.execute(select(func.count(Host.mac_address)).where(Host.is_up == True))).scalar() or 0  # noqa: E712
     unique_ips = (await db.execute(select(func.count(distinct(Host.ip_address))))).scalar() or 0
 
     total_ports = (await db.execute(select(func.count(Port.id)))).scalar() or 0
@@ -53,10 +53,10 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db)):
 
     # OS distribution
     os_dist_q = (
-        select(Host.os_family, func.count(Host.id).label("count"))
+        select(Host.os_family, func.count(Host.mac_address).label("count"))
         .where(Host.os_family.isnot(None))
         .group_by(Host.os_family)
-        .order_by(func.count(Host.id).desc())
+        .order_by(func.count(Host.mac_address).desc())
         .limit(10)
     )
     os_dist_result = await db.execute(os_dist_q)

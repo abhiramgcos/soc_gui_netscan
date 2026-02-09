@@ -20,18 +20,19 @@ class TagBrief(BaseModel):
 
 class HostOut(BaseModel):
     """Host response."""
-    id: uuid.UUID
-    scan_id: uuid.UUID
+    mac_address: str
+    scan_id: uuid.UUID | None = None
     ip_address: str
-    mac_address: str | None
-    hostname: str | None
-    vendor: str | None
-    os_name: str | None
-    os_family: str | None
-    os_accuracy: int | None
-    os_cpe: str | None
-    is_up: bool
-    response_time_ms: int | None
+    hostname: str | None = None
+    vendor: str | None = None
+    os_name: str | None = None
+    os_family: str | None = None
+    os_accuracy: int | None = None
+    os_cpe: str | None = None
+    is_up: bool = True
+    response_time_ms: int | None = None
+    firmware_url: str | None = None
+    open_port_count: int = 0
     discovered_at: datetime
     last_seen: datetime
     tags: list[TagBrief] = []
@@ -44,6 +45,16 @@ class HostDetailOut(HostOut):
     ports: list[PortOut] = []
 
     model_config = {"from_attributes": True}
+
+
+class HostUpdate(BaseModel):
+    """Editable fields for a host."""
+    hostname: str | None = None
+    vendor: str | None = None
+    os_name: str | None = None
+    os_family: str | None = None
+    firmware_url: str | None = None
+    ip_address: str | None = None
 
 
 class HostListOut(BaseModel):

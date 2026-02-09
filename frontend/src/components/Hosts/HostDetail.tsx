@@ -6,36 +6,75 @@ import {
   Tag as TagIcon,
   Plus,
   X,
+  Save,
+  Edit3,
 } from 'lucide-react';
 import { hostsApi, tagsApi } from '../../api/client';
 import { useFetch } from '../../hooks/useData';
 import { formatDate, portLabel } from '../../utils/formatters';
-import type { HostDetail as HostDetailType, Tag } from '../../types';
+import type { HostDetail as HostDetailType, Tag, HostUpdate } from '../../types';
 
 function HostDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { mac } = useParams<{ mac: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'ports' | 'info' | 'tags'>('ports');
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [showTagPicker, setShowTagPicker] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+
+  // Editable form fields
+  const [form, setForm] = useState<HostUpdate>({});
 
   const { data: host, loading, reload } = useFetch<HostDetailType>(
-    () => hostsApi.get(id!),
-    [id],
+    () => hostsApi.get(mac!),
+    [mac],
   );
 
   useEffect(() => {
     tagsApi.list().then(setAllTags).catch(() => {});
   }, []);
 
+  // Sync form state when host data loads or changes
+  useEffect(() => {
+    if (host) {
+      setForm({
+        hostname: host.hostname,
+        vendor: host.vendor,
+        os_name: host.os_name,
+        os_family: host.os_family,
+        firmware_url: host.firmware_url,
+        ip_address: host.ip_address,
+      });
+    }
+  }, [host]);
+
+  const handleSave = async () => {
+    if (!mac) return;
+    setSaving(true);
+    try {
+      await hostsApi.update(mac, form);
+      setSaveMsg('Saved!');
+      setEditing(false);
+      reload();
+      setTimeout(() => setSaveMsg(null), 3000);
+    } catch (e: unknown) {
+      setSaveMsg(`Error: ${e instanceof Error ? e.message : 'Unknown'}`);
+      setTimeout(() => setSaveMsg(null), 4000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleAddTag = async (tagId: string) => {
-    await hostsApi.addTag(id!, tagId);
+    await hostsApi.addTag(mac!, tagId);
     setShowTagPicker(false);
     reload();
   };
 
   const handleRemoveTag = async (tagId: string) => {
-    await hostsApi.removeTag(id!, tagId);
+    await hostsApi.removeTag(mac!, tagId);
     reload();
   };
 
@@ -66,25 +105,42 @@ function HostDetail() {
           </button>
           <div>
             <h1 className="page-title mono">{host.ip_address}</h1>
-            <p className="page-subtitle">{host.hostname || 'No hostname'}</p>
+            <p className="page-subtitle">{host.hostname || 'No hostname'} &middot; <span className="mono" style={{ fontSize: 12 }}>{host.mac_address}</span></p>
           </div>
           <span className={`badge badge-${host.is_up ? 'open' : 'closed'}`}>
             <span className="badge-dot" />
             {host.is_up ? 'UP' : 'DOWN'}
           </span>
         </div>
+        <div className="flex gap-sm items-center">
+          {saveMsg && <span style={{ fontSize: 12, color: 'var(--accent-green)' }}>{saveMsg}</span>}
+          {editing ? (
+            <>
+              <button className="btn btn-secondary btn-sm" onClick={() => setEditing(false)}>Cancel</button>
+              <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
+                <Save size={14} /> {saving ? 'Saving...' : 'Save'}
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-secondary btn-sm" onClick={() => setEditing(true)}>
+              <Edit3 size={14} /> Edit
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Info Grid ───────────────────── */}
       <div className="detail-grid mb-xl">
-        <DetailItem label="IP Address" value={host.ip_address} mono />
+        <EditableItem label="IP Address" value={form.ip_address} editing={editing} onChange={(v) => setForm({ ...form, ip_address: v })} mono />
         <DetailItem label="MAC Address" value={host.mac_address} mono />
-        <DetailItem label="Hostname" value={host.hostname} />
-        <DetailItem label="Vendor" value={host.vendor} />
-        <DetailItem label="OS" value={host.os_name} />
-        <DetailItem label="OS Family" value={host.os_family} />
+        <EditableItem label="Hostname" value={form.hostname} editing={editing} onChange={(v) => setForm({ ...form, hostname: v })} />
+        <EditableItem label="Vendor" value={form.vendor} editing={editing} onChange={(v) => setForm({ ...form, vendor: v })} />
+        <EditableItem label="OS" value={form.os_name} editing={editing} onChange={(v) => setForm({ ...form, os_name: v })} />
+        <EditableItem label="OS Family" value={form.os_family} editing={editing} onChange={(v) => setForm({ ...form, os_family: v })} />
         <DetailItem label="OS Accuracy" value={host.os_accuracy != null ? `${host.os_accuracy}%` : null} />
         <DetailItem label="Response Time" value={host.response_time_ms != null ? `${host.response_time_ms}ms` : null} />
+        <EditableItem label="Firmware URL" value={form.firmware_url} editing={editing} onChange={(v) => setForm({ ...form, firmware_url: v })} mono />
+        <DetailItem label="Open Ports" value={String(host.open_port_count)} />
         <DetailItem label="Discovered" value={formatDate(host.discovered_at)} />
         <DetailItem label="Last Seen" value={formatDate(host.last_seen)} />
       </div>
@@ -242,6 +298,35 @@ function DetailItem({ label, value, mono }: { label: string; value: string | nul
     <div className="detail-item">
       <span className="detail-label">{label}</span>
       <span className={`detail-value${mono ? ' mono' : ''}`}>{value || '—'}</span>
+    </div>
+  );
+}
+
+function EditableItem({ label, value, editing, onChange, mono }: {
+  label: string;
+  value: string | null | undefined;
+  editing: boolean;
+  onChange: (v: string) => void;
+  mono?: boolean;
+}) {
+  if (!editing) {
+    return (
+      <div className="detail-item">
+        <span className="detail-label">{label}</span>
+        <span className={`detail-value${mono ? ' mono' : ''}`}>{value || '—'}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="detail-item">
+      <span className="detail-label">{label}</span>
+      <input
+        className="input"
+        style={{ fontSize: 13, padding: '4px 8px' }}
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={label}
+      />
     </div>
   );
 }

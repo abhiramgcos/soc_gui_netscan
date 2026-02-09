@@ -1,0 +1,46 @@
+{
+  "mac_address": "AC:15:A2:D6:95:4E",
+  "ip_address": "192.168.1.4",
+  "hostname": "tp-link.lan",
+  "vendor": "TP-Link Limited",
+  "os_name": "Canon imageRUNNER C5185 printer or Mercusys AC12G WAP",
+  "os_family": "embedded",
+  "os_accuracy": 97,
+  "os_cpe": "cpe:/h:canon:imagerunner_c5185",
+  "is_up": true,
+  "response_time_ms": 0,
+  "firmware_url": null,
+  "open_port_count": 3,
+  "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+  "last_seen": "2026-02-09T03:35:26.065730+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 22,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "ssh",
+      "service_version": "6.6.0",
+      "service_product": "OpenSSH",
+      "service_cpe": "cpe:/a:openbsd:openssh:6.6.0"
+    },
+    {
+      "port_number": 80,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": null,
+      "service_product": "TP-LINK router http config",
+      "service_cpe": null
+    },
+    {
+      "port_number": 1900,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "upnp",
+      "service_version": null,
+      "service_product": "TP-LINK router upnpd",
+      "service_cpe": null
+    }
+  ]
+}

@@ -16,7 +16,7 @@ class Port(Base):
     __tablename__ = "ports"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    host_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("hosts.id", ondelete="CASCADE"), nullable=False, index=True)
+    host_id: Mapped[str] = mapped_column(String(17), ForeignKey("hosts.mac_address", ondelete="CASCADE"), nullable=False, index=True)
 
     port_number: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     protocol: Mapped[str] = mapped_column(String(10), nullable=False, default="tcp")

@@ -1,0 +1,82 @@
+{
+  "mac_address": "00:00:192:168:",
+  "ip_address": "192.168.1.15",
+  "hostname": "cos777-wifi.lan",
+  "vendor": null,
+  "os_name": "Linux 2.6.32",
+  "os_family": "Linux",
+  "os_accuracy": 100,
+  "os_cpe": "cpe:/o:linux:linux_kernel:2.6.32",
+  "is_up": true,
+  "response_time_ms": null,
+  "firmware_url": null,
+  "open_port_count": 7,
+  "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+  "last_seen": "2026-02-09T03:35:26.085550+00:00",
+  "tags": [],
+  "ports": [
+    {
+      "port_number": 3000,
+      "protocol": "tcp",
+      "state": "filtered",
+      "service_name": "ppp",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 5434,
+      "protocol": "tcp",
+      "state": "filtered",
+      "service_name": "sgi-arrayd",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 6379,
+      "protocol": "tcp",
+      "state": "filtered",
+      "service_name": "redis",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 8000,
+      "protocol": "tcp",
+      "state": "filtered",
+      "service_name": "http-alt",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 8001,
+      "protocol": "tcp",
+      "state": "open",
+      "service_name": "http",
+      "service_version": null,
+      "service_product": "Uvicorn",
+      "service_cpe": "cpe:/a:encode:uvicorn"
+    },
+    {
+      "port_number": 9443,
+      "protocol": "tcp",
+      "state": "filtered",
+      "service_name": "tungsten-https",
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    },
+    {
+      "port_number": 42732,
+      "protocol": "tcp",
+      "state": "closed",
+      "service_name": null,
+      "service_version": null,
+      "service_product": null,
+      "service_cpe": null
+    }
+  ]
+}

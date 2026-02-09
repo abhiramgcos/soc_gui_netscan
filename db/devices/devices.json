@@ -1,0 +1,503 @@
+[
+  {
+    "mac_address": "14:A7:2B:36:43:C7",
+    "ip_address": "192.168.1.1",
+    "hostname": "_gateway",
+    "vendor": "currentoptronics Pvt.Ltd",
+    "os_name": "Linux 2.6.8 - 2.6.30",
+    "os_family": "Linux",
+    "os_accuracy": 100,
+    "os_cpe": "cpe:/o:linux:linux_kernel:2.6",
+    "is_up": true,
+    "response_time_ms": 2,
+    "firmware_url": null,
+    "open_port_count": 4,
+    "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+    "last_seen": "2026-02-09T03:35:26.056755+00:00",
+    "tags": [],
+    "ports": [
+      {
+        "port_number": 21,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "ftp",
+        "service_version": "1.9.4",
+        "service_product": "GNU Inetutils FTPd",
+        "service_cpe": "cpe:/a:gnu:inetutils:1.9.4"
+      },
+      {
+        "port_number": 53,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "domain",
+        "service_version": "2.80",
+        "service_product": "dnsmasq",
+        "service_cpe": "cpe:/a:thekelleys:dnsmasq:2.80"
+      },
+      {
+        "port_number": 80,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "tcpwrapped",
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 443,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "tcpwrapped",
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      }
+    ]
+  },
+  {
+    "mac_address": "6C:D1:99:5A:F4:E9",
+    "ip_address": "192.168.1.3",
+    "hostname": "i2214.lan",
+    "vendor": "vivo Mobile Communication",
+    "os_name": null,
+    "os_family": null,
+    "os_accuracy": null,
+    "os_cpe": null,
+    "is_up": true,
+    "response_time_ms": 204,
+    "firmware_url": null,
+    "open_port_count": 0,
+    "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+    "last_seen": "2026-02-09T03:35:26.064573+00:00",
+    "tags": [],
+    "ports": []
+  },
+  {
+    "mac_address": "AC:15:A2:D6:95:4E",
+    "ip_address": "192.168.1.4",
+    "hostname": "tp-link.lan",
+    "vendor": "TP-Link Limited",
+    "os_name": "Canon imageRUNNER C5185 printer or Mercusys AC12G WAP",
+    "os_family": "embedded",
+    "os_accuracy": 97,
+    "os_cpe": "cpe:/h:canon:imagerunner_c5185",
+    "is_up": true,
+    "response_time_ms": 0,
+    "firmware_url": null,
+    "open_port_count": 3,
+    "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+    "last_seen": "2026-02-09T03:35:26.065730+00:00",
+    "tags": [],
+    "ports": [
+      {
+        "port_number": 22,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "ssh",
+        "service_version": "6.6.0",
+        "service_product": "OpenSSH",
+        "service_cpe": "cpe:/a:openbsd:openssh:6.6.0"
+      },
+      {
+        "port_number": 80,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": null,
+        "service_product": "TP-LINK router http config",
+        "service_cpe": null
+      },
+      {
+        "port_number": 1900,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "upnp",
+        "service_version": null,
+        "service_product": "TP-LINK router upnpd",
+        "service_cpe": null
+      }
+    ]
+  },
+  {
+    "mac_address": "8C:53:C3:EA:70:66",
+    "ip_address": "192.168.1.5",
+    "hostname": "mi-router.lan",
+    "vendor": "Beijing Xiaomi Mobile Software",
+    "os_name": "Xiaomi MiWiFi (Linux 3.10)",
+    "os_family": "Linux",
+    "os_accuracy": 96,
+    "os_cpe": "cpe:/o:linux:linux_kernel:3.10",
+    "is_up": true,
+    "response_time_ms": 0,
+    "firmware_url": null,
+    "open_port_count": 6,
+    "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+    "last_seen": "2026-02-09T03:35:26.067655+00:00",
+    "tags": [],
+    "ports": [
+      {
+        "port_number": 80,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": null,
+        "service_product": "nginx",
+        "service_cpe": "cpe:/a:igor_sysoev:nginx"
+      },
+      {
+        "port_number": 8192,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": null,
+        "service_product": "nginx",
+        "service_cpe": "cpe:/a:igor_sysoev:nginx"
+      },
+      {
+        "port_number": 8193,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": null,
+        "service_product": "nginx",
+        "service_cpe": "cpe:/a:igor_sysoev:nginx"
+      },
+      {
+        "port_number": 8383,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": null,
+        "service_product": "nginx",
+        "service_cpe": "cpe:/a:igor_sysoev:nginx"
+      },
+      {
+        "port_number": 8443,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": null,
+        "service_product": "nginx",
+        "service_cpe": "cpe:/a:igor_sysoev:nginx"
+      },
+      {
+        "port_number": 8899,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": null,
+        "service_product": "nginx",
+        "service_cpe": "cpe:/a:igor_sysoev:nginx"
+      }
+    ]
+  },
+  {
+    "mac_address": "3C:7C:3F:18:A1:C2",
+    "ip_address": "192.168.1.9",
+    "hostname": "truenas.lan",
+    "vendor": "ASUSTek Computer",
+    "os_name": "Linux 4.15 - 5.19",
+    "os_family": "Linux",
+    "os_accuracy": 100,
+    "os_cpe": "cpe:/o:linux:linux_kernel:4",
+    "is_up": true,
+    "response_time_ms": 1,
+    "firmware_url": null,
+    "open_port_count": 12,
+    "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+    "last_seen": "2026-02-09T03:35:26.070084+00:00",
+    "tags": [],
+    "ports": [
+      {
+        "port_number": 53,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "domain",
+        "service_version": null,
+        "service_product": "Unbound",
+        "service_cpe": "cpe:/a:nlnetlabs:unbound"
+      },
+      {
+        "port_number": 80,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": null,
+        "service_product": "nginx",
+        "service_cpe": "cpe:/a:igor_sysoev:nginx"
+      },
+      {
+        "port_number": 111,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "rpcbind",
+        "service_version": "2-4",
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 139,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "netbios-ssn",
+        "service_version": "4",
+        "service_product": "Samba smbd",
+        "service_cpe": "cpe:/a:samba:samba:4"
+      },
+      {
+        "port_number": 443,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": null,
+        "service_product": "nginx",
+        "service_cpe": "cpe:/a:igor_sysoev:nginx"
+      },
+      {
+        "port_number": 445,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "netbios-ssn",
+        "service_version": "4",
+        "service_product": "Samba smbd",
+        "service_cpe": "cpe:/a:samba:samba:4"
+      },
+      {
+        "port_number": 4567,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "tram",
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 5357,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": "0.6",
+        "service_product": "BaseHTTPServer",
+        "service_cpe": "cpe:/a:python:python:3.11.9"
+      },
+      {
+        "port_number": 6969,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "acmsoda",
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 8443,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "https-alt",
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 9090,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": "1.27.3",
+        "service_product": "nginx",
+        "service_cpe": "cpe:/a:igor_sysoev:nginx:1.27.3"
+      },
+      {
+        "port_number": 9091,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": "1.27.3",
+        "service_product": "nginx",
+        "service_cpe": "cpe:/a:igor_sysoev:nginx:1.27.3"
+      }
+    ]
+  },
+  {
+    "mac_address": "B4:E6:2D:72:42:D5",
+    "ip_address": "192.168.1.12",
+    "hostname": "room-1-relay.lan",
+    "vendor": "Espressif",
+    "os_name": null,
+    "os_family": null,
+    "os_accuracy": null,
+    "os_cpe": null,
+    "is_up": true,
+    "response_time_ms": 210,
+    "firmware_url": null,
+    "open_port_count": 0,
+    "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+    "last_seen": "2026-02-09T03:35:26.073046+00:00",
+    "tags": [],
+    "ports": []
+  },
+  {
+    "mac_address": "74:CB:F3:5B:DB:F7",
+    "ip_address": "192.168.1.13",
+    "hostname": "lava-blaze.lan",
+    "vendor": "Lava international limited",
+    "os_name": null,
+    "os_family": null,
+    "os_accuracy": null,
+    "os_cpe": null,
+    "is_up": true,
+    "response_time_ms": 259,
+    "firmware_url": null,
+    "open_port_count": 0,
+    "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+    "last_seen": "2026-02-09T03:35:26.073976+00:00",
+    "tags": [],
+    "ports": []
+  },
+  {
+    "mac_address": "8E:EE:05:80:51:BC",
+    "ip_address": "192.168.1.44",
+    "hostname": "192-168-1-44.lan",
+    "vendor": null,
+    "os_name": null,
+    "os_family": null,
+    "os_accuracy": null,
+    "os_cpe": null,
+    "is_up": true,
+    "response_time_ms": 166,
+    "firmware_url": null,
+    "open_port_count": 0,
+    "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+    "last_seen": "2026-02-09T03:35:26.074851+00:00",
+    "tags": [],
+    "ports": []
+  },
+  {
+    "mac_address": "A8:E2:91:D9:C7:57",
+    "ip_address": "192.168.1.59",
+    "hostname": "anoop-jeytson-suiper.lan",
+    "vendor": null,
+    "os_name": "Linux 4.15 - 5.19",
+    "os_family": "Linux",
+    "os_accuracy": 100,
+    "os_cpe": "cpe:/o:linux:linux_kernel:4",
+    "is_up": true,
+    "response_time_ms": 163,
+    "firmware_url": null,
+    "open_port_count": 3,
+    "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+    "last_seen": "2026-02-09T03:35:26.075689+00:00",
+    "tags": [],
+    "ports": [
+      {
+        "port_number": 22,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "ssh",
+        "service_version": "8.9p1 Ubuntu 3ubuntu0.13",
+        "service_product": "OpenSSH",
+        "service_cpe": "cpe:/a:openbsd:openssh:8.9p1"
+      },
+      {
+        "port_number": 111,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "rpcbind",
+        "service_version": "2-4",
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 631,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "ipp",
+        "service_version": "2.4",
+        "service_product": "CUPS",
+        "service_cpe": "cpe:/a:apple:cups:2.4"
+      }
+    ]
+  },
+  {
+    "mac_address": "00:00:192:168:",
+    "ip_address": "192.168.1.15",
+    "hostname": "cos777-wifi.lan",
+    "vendor": null,
+    "os_name": "Linux 2.6.32",
+    "os_family": "Linux",
+    "os_accuracy": 100,
+    "os_cpe": "cpe:/o:linux:linux_kernel:2.6.32",
+    "is_up": true,
+    "response_time_ms": null,
+    "firmware_url": null,
+    "open_port_count": 7,
+    "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+    "last_seen": "2026-02-09T03:35:26.085550+00:00",
+    "tags": [],
+    "ports": [
+      {
+        "port_number": 3000,
+        "protocol": "tcp",
+        "state": "filtered",
+        "service_name": "ppp",
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 5434,
+        "protocol": "tcp",
+        "state": "filtered",
+        "service_name": "sgi-arrayd",
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 6379,
+        "protocol": "tcp",
+        "state": "filtered",
+        "service_name": "redis",
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 8000,
+        "protocol": "tcp",
+        "state": "filtered",
+        "service_name": "http-alt",
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 8001,
+        "protocol": "tcp",
+        "state": "open",
+        "service_name": "http",
+        "service_version": null,
+        "service_product": "Uvicorn",
+        "service_cpe": "cpe:/a:encode:uvicorn"
+      },
+      {
+        "port_number": 9443,
+        "protocol": "tcp",
+        "state": "filtered",
+        "service_name": "tungsten-https",
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      },
+      {
+        "port_number": 42732,
+        "protocol": "tcp",
+        "state": "closed",
+        "service_name": null,
+        "service_version": null,
+        "service_product": null,
+        "service_cpe": null
+      }
+    ]
+  }
+]

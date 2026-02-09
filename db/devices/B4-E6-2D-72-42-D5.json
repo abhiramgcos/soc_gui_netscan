@@ -1,0 +1,18 @@
+{
+  "mac_address": "B4:E6:2D:72:42:D5",
+  "ip_address": "192.168.1.12",
+  "hostname": "room-1-relay.lan",
+  "vendor": "Espressif",
+  "os_name": null,
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": 210,
+  "firmware_url": null,
+  "open_port_count": 0,
+  "discovered_at": "2026-02-09T03:35:26.052474+00:00",
+  "last_seen": "2026-02-09T03:35:26.073046+00:00",
+  "tags": [],
+  "ports": []
+}

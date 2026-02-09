@@ -15,7 +15,7 @@ from app.database import Base
 host_tags = Table(
     "host_tags",
     Base.metadata,
-    Column("host_id", UUID(as_uuid=True), ForeignKey("hosts.id", ondelete="CASCADE"), primary_key=True),
+    Column("host_id", String(17), ForeignKey("hosts.mac_address", ondelete="CASCADE"), primary_key=True),
     Column("tag_id", UUID(as_uuid=True), ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
 )
 
