@@ -19,6 +19,9 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+import os
+import signal
+
 from app.config import settings
 from app.utils.logging import get_logger
 
@@ -50,19 +53,31 @@ class DiscoveredHost:
 # ────────────────────────────────────────────────
 
 async def _run_cmd(cmd: list[str], timeout: int = 300) -> tuple[str, str, int]:
-    """Run a command asynchronously and return (stdout, stderr, returncode)."""
+    """Run a command asynchronously and return (stdout, stderr, returncode).
+    
+    Uses process groups so sudo + child processes are all killed on timeout.
+    """
     log.debug("exec_cmd", cmd=" ".join(cmd))
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        start_new_session=True,  # create a new process group
     )
     try:
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
         return stdout.decode(errors="replace"), stderr.decode(errors="replace"), proc.returncode or 0
     except asyncio.TimeoutError:
-        proc.kill()
-        await proc.communicate()
+        # Kill the entire process group (sudo + its children)
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            proc.kill()
+        try:
+            await asyncio.wait_for(proc.communicate(), timeout=5)
+        except (asyncio.TimeoutError, ProcessLookupError):
+            pass
+        log.warning("cmd_timeout", cmd=cmd[0], timeout=timeout)
         return "", f"Command timed out after {timeout}s", -1
 
 
@@ -227,13 +242,13 @@ async def stage2_arp_lookup(
 # ────────────────────────────────────────────────
 
 async def _rustscan_single(host: DiscoveredHost, semaphore: asyncio.Semaphore, batch_size: int, timeout: int) -> DiscoveredHost:
-    """RustScan all 65535 ports on a single host."""
+    """RustScan top 1000 common ports on a single host."""
     async with semaphore:
         rustscan = _find_binary("rustscan")
         cmd = [
             "sudo", rustscan,
             "-a", host.ip,
-            "-r", "1-65535",
+            "--top",
             "-b", str(batch_size),
             "--ulimit", "5000",
             "--timeout", str(min(timeout * 1000, 300000)),
@@ -250,10 +265,10 @@ async def _rustscan_single(host: DiscoveredHost, semaphore: asyncio.Semaphore, b
                     ports_str = match.group(1)
                     host.open_ports = [int(p.strip()) for p in ports_str.split(",") if p.strip().isdigit()]
 
-        # Fallback: quick nmap SYN scan if rustscan fails
+        # Fallback: nmap SYN scan top 1000 if rustscan fails
         if rc != 0 or not host.open_ports:
             nmap = _find_binary("nmap")
-            cmd = ["sudo", nmap, "-sS", "-p-", "--min-rate", "3000", "-T4", "-oX", "-", host.ip]
+            cmd = ["sudo", nmap, "-sS", "--top-ports", "1000", "--min-rate", "3000", "-T4", "-oX", "-", host.ip]
             stdout, stderr, rc = await _run_cmd(cmd, timeout)
             if rc == 0:
                 try:
@@ -285,7 +300,7 @@ async def stage3_port_scan(
     timeout_per_host = timeout_per_host or settings.scan_timeout_per_host
 
     if on_progress:
-        await on_progress(f"Stage 3: Port scanning {len(hosts)} hosts (all 65535 ports)", {"count": len(hosts)})
+        await on_progress(f"Stage 3: Port scanning {len(hosts)} hosts (top 1000 ports)", {"count": len(hosts)})
 
     sem = asyncio.Semaphore(concurrency)
     tasks = [_rustscan_single(h, sem, batch_size, timeout_per_host) for h in hosts]

@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # ── Scanner ─────────────────────────────────
     nmap_path: str = "/usr/bin/nmap"
     rustscan_path: str = "/usr/bin/rustscan"
-    scan_timeout_per_host: int = 300          # seconds
+    scan_timeout_per_host: int = 120          # seconds
     rustscan_batch_size: int = 3000           # parallel connections
     max_concurrent_scans: int = 4
     worker_concurrency: int = 4
