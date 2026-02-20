@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Radar,
   Server,
+  Shield,
   Download,
   Activity,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ function Layout({ children }: Props) {
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/scans', icon: Radar, label: 'Scans' },
     { to: '/hosts', icon: Server, label: 'Hosts' },
+    { to: '/firmware', icon: Shield, label: 'Firmware' },
   ];
 
   return (

@@ -2,6 +2,10 @@
 
 import type {
   DashboardStats,
+  FirmwareAnalysis,
+  FirmwareAnalysisListResponse,
+  FirmwareAnalysisSummary,
+  FirmwareReport,
   HostDetail,
   HostListResponse,
   HostUpdate,
@@ -84,4 +88,31 @@ export const exportApi = {
     `${BASE}/export/scans/${scanId}?format=${format}`,
   hostsUrl: (format: 'csv' | 'json' = 'csv') =>
     `${BASE}/export/hosts?format=${format}`,
+};
+
+/* ── Firmware Analysis ─────────────────────── */
+export const firmwareApi = {
+  list: (params?: Record<string, string>) => {
+    const qs = new URLSearchParams(params).toString();
+    return request<FirmwareAnalysisListResponse>(`/firmware${qs ? `?${qs}` : ''}`);
+  },
+  get: (id: string) => request<FirmwareAnalysis>(`/firmware/${id}`),
+  start: (hostMac: string, fwUrl?: string) =>
+    request<FirmwareAnalysis>('/firmware', {
+      method: 'POST',
+      body: JSON.stringify({ host_mac: hostMac, fw_url: fwUrl }),
+    }),
+  startBatch: (hostMacs?: string[]) =>
+    request<FirmwareAnalysis[]>('/firmware/batch', {
+      method: 'POST',
+      body: JSON.stringify({ host_macs: hostMacs }),
+    }),
+  cancel: (id: string) =>
+    request<FirmwareAnalysis>(`/firmware/${id}/cancel`, { method: 'POST' }),
+  delete: (id: string) =>
+    request<void>(`/firmware/${id}`, { method: 'DELETE' }),
+  getReport: (id: string) =>
+    request<FirmwareReport>(`/firmware/${id}/report`),
+  summary: () =>
+    request<FirmwareAnalysisSummary>('/firmware/summary'),
 };

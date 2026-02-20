@@ -62,6 +62,10 @@ async def create_scan(
     await db.flush()
     await db.refresh(scan)
 
+    # Commit BEFORE enqueuing so the worker can always find the row
+    await db.commit()
+    await db.refresh(scan)
+
     # Enqueue the scan for the worker
     await scheduler.enqueue_scan(scan.id)
     log.info("scan_created", scan_id=str(scan.id), target=body.target)

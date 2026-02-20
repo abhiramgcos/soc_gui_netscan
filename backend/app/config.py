@@ -31,6 +31,17 @@ class Settings(BaseSettings):
     max_concurrent_scans: int = 4
     worker_concurrency: int = 4
 
+    # ── Firmware Analysis ───────────────────────
+    emba_path: str = "/opt/emba/emba"
+    emba_timeout: int = 7200                  # 2 hours max per device
+    emba_gpt_level: str = "1"                 # 1=scripts/configs, 2=+binary
+    firmware_dir: str = "/app/firmware"
+    emba_logs_dir: str = "/app/emba_logs"
+
+    # ── Ollama (local LLM for AI triage) ────────
+    ollama_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen3:4b"
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "case_sensitive": False}
 
 

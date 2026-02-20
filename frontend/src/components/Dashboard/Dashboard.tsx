@@ -5,6 +5,8 @@ import {
   Wifi,
   CheckCircle2,
   ArrowRight,
+  Shield,
+  AlertTriangle,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/client';
 import { useFetch, usePolling } from '../../hooks/useData';
@@ -87,6 +89,33 @@ function Dashboard() {
           color="green"
         />
       </div>
+
+      {/* ── Firmware Stats Row ──────────── */}
+      {stats.firmware && (
+        <div className="stats-grid" style={{ marginBottom: 16 }}>
+          <StatCard
+            label="FW Analyses"
+            value={stats.firmware.total}
+            sub={`${stats.firmware.running} running`}
+            icon={<Shield size={20} />}
+            color="purple"
+          />
+          <StatCard
+            label="FW Completed"
+            value={stats.firmware.completed}
+            sub={`${stats.firmware.hosts_with_firmware_url} hosts analysed`}
+            icon={<CheckCircle2 size={20} />}
+            color="green"
+          />
+          <StatCard
+            label="Avg Risk Score"
+            value={Number((stats.firmware.avg_risk_score ?? 0).toFixed(1))}
+            sub={`max ${(stats.firmware.max_risk_score ?? 0).toFixed(1)}`}
+            icon={<AlertTriangle size={20} />}
+            color={(stats.firmware.avg_risk_score ?? 0) > 7 ? 'red' : (stats.firmware.avg_risk_score ?? 0) > 4 ? 'amber' : 'green'}
+          />
+        </div>
+      )}
 
       {/* ── Two-column content ──────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>

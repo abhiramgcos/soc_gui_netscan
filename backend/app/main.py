@@ -75,6 +75,7 @@ from app.api.export import router as export_router     # noqa: E402
 from app.api.dashboard import router as dashboard_router  # noqa: E402
 from app.api.ws import router as ws_router             # noqa: E402
 from app.api.network import router as network_router   # noqa: E402
+from app.api.firmware import router as firmware_router  # noqa: E402
 
 app.include_router(scans_router, prefix="/api")
 app.include_router(hosts_router, prefix="/api")
@@ -82,4 +83,5 @@ app.include_router(tags_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(network_router, prefix="/api")
+app.include_router(firmware_router, prefix="/api")
 app.include_router(ws_router)

@@ -19,6 +19,9 @@ arq==0.26.1
 # ── Scanning Tools ──────────────────────────
 python-nmap==0.7.1
 
+# ── HTTP Client (firmware download + Ollama) ─
+httpx==0.27.2
+
 # ── Utilities ───────────────────────────────
 python-dateutil==2.9.0
 orjson==3.10.7
@@ -32,7 +35,6 @@ openpyxl==3.1.5
 pytest==8.3.3
 pytest-asyncio==0.24.0
 pytest-cov==5.0.0
-httpx==0.27.2
 factory-boy==3.3.1
 aiosqlite==0.20.0
 

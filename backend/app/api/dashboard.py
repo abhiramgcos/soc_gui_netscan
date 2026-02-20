@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.host import Host
 from app.models.port import Port
 from app.models.scan import Scan, ScanStatus
+from app.models.firmware import FirmwareAnalysis, FirmwareStatus
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -93,8 +94,49 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db)):
             "total": total_ports,
             "open": open_ports,
         },
+        "firmware": await _firmware_stats(db),
         "top_services": top_services,
         "top_ports": top_ports,
         "os_distribution": os_distribution,
         "recent_scans": recent_scans,
+    }
+
+
+async def _firmware_stats(db: AsyncSession) -> dict:
+    """Compute firmware analysis aggregate stats for the dashboard."""
+    total = (await db.execute(select(func.count(FirmwareAnalysis.id)))).scalar() or 0
+    completed = (await db.execute(
+        select(func.count(FirmwareAnalysis.id)).where(
+            FirmwareAnalysis.status == FirmwareStatus.COMPLETED
+        )
+    )).scalar() or 0
+    running = (await db.execute(
+        select(func.count(FirmwareAnalysis.id)).where(
+            FirmwareAnalysis.status.in_([
+                FirmwareStatus.DOWNLOADING, FirmwareStatus.EMBA_RUNNING,
+                FirmwareStatus.TRIAGING, FirmwareStatus.PENDING,
+            ])
+        )
+    )).scalar() or 0
+    avg_risk = (await db.execute(
+        select(func.avg(FirmwareAnalysis.risk_score)).where(
+            FirmwareAnalysis.risk_score.isnot(None)
+        )
+    )).scalar()
+    max_risk = (await db.execute(
+        select(func.max(FirmwareAnalysis.risk_score)).where(
+            FirmwareAnalysis.risk_score.isnot(None)
+        )
+    )).scalar()
+    hosts_with_fw = (await db.execute(
+        select(func.count(Host.mac_address)).where(Host.firmware_url.isnot(None))
+    )).scalar() or 0
+
+    return {
+        "total": total,
+        "completed": completed,
+        "running": running,
+        "avg_risk_score": round(avg_risk, 1) if avg_risk else None,
+        "max_risk_score": round(max_risk, 1) if max_risk else None,
+        "hosts_with_firmware_url": hosts_with_fw,
     }

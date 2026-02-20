@@ -5,6 +5,8 @@ import ScanList from './components/Scans/ScanList';
 import ScanDetail from './components/Scans/ScanDetail';
 import HostTable from './components/Hosts/HostTable';
 import HostDetail from './components/Hosts/HostDetail';
+import FirmwareList from './components/Firmware/FirmwareList';
+import FirmwareDetail from './components/Firmware/FirmwareDetail';
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
         <Route path="/scans/:id" element={<ScanDetail />} />
         <Route path="/hosts" element={<HostTable />} />
         <Route path="/hosts/:mac" element={<HostDetail />} />
+        <Route path="/firmware" element={<FirmwareList />} />
+        <Route path="/firmware/:id" element={<FirmwareDetail />} />
       </Routes>
     </Layout>
   );

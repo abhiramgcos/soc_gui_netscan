@@ -21,7 +21,9 @@ from app.database import async_session, engine
 from app.models.host import Host
 from app.models.port import Port
 from app.models.scan import Scan, ScanLog, ScanStatus
+from app.models.firmware import FirmwareAnalysis, FirmwareStatus
 from app.services.scanner import DiscoveredHost, run_full_pipeline
+from app.services.firmware_pipeline import run_firmware_pipeline
 from app.services.scheduler import ScanScheduler, scheduler
 from app.utils.logging import configure_logging, get_logger
 
@@ -157,29 +159,37 @@ async def _process_scan(scan_id_str: str):
         })
 
     try:
-        # Load scan from DB and mark as running
-        async with async_session() as db:
-            result = await db.execute(select(Scan).where(Scan.id == scan_id))
-            scan = result.scalar_one_or_none()
+        # Load scan from DB and mark as running (retry up to 3 times for race conditions)
+        scan = None
+        target = None
+        existing_hosts = {}
+        for attempt in range(3):
+            async with async_session() as db:
+                result = await db.execute(select(Scan).where(Scan.id == scan_id))
+                scan = result.scalar_one_or_none()
 
-            if not scan:
-                log.error("scan_not_found", scan_id=scan_id_str)
-                return
+                if scan:
+                    if scan.status == ScanStatus.CANCELLED:
+                        log.info("scan_already_cancelled", scan_id=scan_id_str)
+                        return
 
-            if scan.status == ScanStatus.CANCELLED:
-                log.info("scan_already_cancelled", scan_id=scan_id_str)
-                return
+                    target = scan.target
+                    existing_hosts = await _load_existing_hosts(db)
 
-            target = scan.target
+                    scan.status = ScanStatus.RUNNING
+                    scan.started_at = datetime.now(timezone.utc)
+                    scan.current_stage = 0
+                    await db.commit()
+                    log.info("scan_marked_running", scan_id=scan_id_str, target=target, known_devices=len(existing_hosts))
+                    break
 
-            # Load existing device inventory for stage-4 skip optimization
-            existing_hosts = await _load_existing_hosts(db)
+            # Scan row not yet visible — wait and retry
+            log.warning("scan_not_found_retry", scan_id=scan_id_str, attempt=attempt + 1)
+            await asyncio.sleep(1)
 
-            scan.status = ScanStatus.RUNNING
-            scan.started_at = datetime.now(timezone.utc)
-            scan.current_stage = 0
-            await db.commit()
-            log.info("scan_marked_running", scan_id=scan_id_str, target=target, known_devices=len(existing_hosts))
+        if not scan or not target:
+            log.error("scan_not_found", scan_id=scan_id_str)
+            return
 
         # Execute the 4-stage pipeline (existing_hosts enables stage-4 skip)
         hosts = await run_full_pipeline(target, on_progress=on_progress, existing_hosts=existing_hosts)
@@ -247,8 +257,30 @@ async def _process_scan(scan_id_str: str):
         })
 
 
+async def _process_firmware(analysis_id_str: str):
+    """Execute the firmware analysis pipeline for one device."""
+    log.info("processing_firmware", analysis_id=analysis_id_str)
+
+    async def on_progress(message: str, data: dict):
+        """Publish firmware progress to Redis for WebSocket fanout."""
+        await scheduler.publish_firmware_progress(analysis_id_str, {
+            "type": "firmware_progress",
+            "analysis_id": analysis_id_str,
+            "message": message,
+            **data,
+        })
+
+    await run_firmware_pipeline(analysis_id_str, on_progress=on_progress)
+
+    # Publish completion
+    await scheduler.publish_firmware_progress(analysis_id_str, {
+        "type": "firmware_completed",
+        "analysis_id": analysis_id_str,
+    })
+
+
 async def worker_loop():
-    """Main worker loop — dequeue and process scans."""
+    """Main worker loop — dequeue and process scans and firmware analyses."""
     log.info("worker_starting", concurrency=settings.worker_concurrency)
     await scheduler.start()
 
@@ -256,13 +288,23 @@ async def worker_loop():
 
     while True:
         try:
-            scan_id = await scheduler.dequeue_scan(timeout=2)
+            # Check scan queue (non-blocking with short timeout)
+            scan_id = await scheduler.dequeue_scan(timeout=1)
             if scan_id:
                 log.info("scan_dequeued", scan_id=scan_id)
                 task = asyncio.create_task(_process_scan(scan_id))
                 active_tasks.add(task)
                 task.add_done_callback(active_tasks.discard)
-            else:
+
+            # Check firmware queue (non-blocking with short timeout)
+            fw_id = await scheduler.dequeue_firmware(timeout=1)
+            if fw_id:
+                log.info("firmware_dequeued", analysis_id=fw_id)
+                task = asyncio.create_task(_process_firmware(fw_id))
+                active_tasks.add(task)
+                task.add_done_callback(active_tasks.discard)
+
+            if not scan_id and not fw_id:
                 await asyncio.sleep(0.5)
         except Exception as e:
             log.error("worker_loop_error", error=str(e), exc_info=True)

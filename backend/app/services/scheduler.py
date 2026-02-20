@@ -18,6 +18,8 @@ log = get_logger("scheduler")
 
 SCAN_QUEUE_KEY = "soc:scan_queue"
 CANCEL_SET_KEY = "soc:scan_cancel"
+FW_QUEUE_KEY = "soc:firmware_queue"
+FW_CANCEL_SET_KEY = "soc:firmware_cancel"
 
 
 class ScanScheduler:
@@ -76,6 +78,41 @@ class ScanScheduler:
         r = await self._get_redis()
         import json
         await r.publish(f"soc:scan:{scan_id}", json.dumps(data))
+
+    # ── Firmware Analysis Queue ──────────────────
+
+    async def enqueue_firmware(self, analysis_id: uuid.UUID):
+        """Push a firmware analysis ID onto the Redis queue."""
+        r = await self._get_redis()
+        await r.rpush(FW_QUEUE_KEY, str(analysis_id))
+        log.info("firmware_enqueued", analysis_id=str(analysis_id))
+
+    async def dequeue_firmware(self, timeout: int = 5) -> str | None:
+        """Pop the next firmware analysis ID from the queue (blocking)."""
+        r = await self._get_redis()
+        result = await r.blpop(FW_QUEUE_KEY, timeout=timeout)
+        if result:
+            return result[1]
+        return None
+
+    async def cancel_firmware(self, analysis_id: uuid.UUID):
+        """Mark a firmware analysis as cancelled."""
+        r = await self._get_redis()
+        await r.sadd(FW_CANCEL_SET_KEY, str(analysis_id))
+
+    async def is_cancelled_firmware(self, analysis_id: uuid.UUID) -> bool:
+        r = await self._get_redis()
+        return await r.sismember(FW_CANCEL_SET_KEY, str(analysis_id))
+
+    async def clear_cancel_firmware(self, analysis_id: uuid.UUID):
+        r = await self._get_redis()
+        await r.srem(FW_CANCEL_SET_KEY, str(analysis_id))
+
+    async def publish_firmware_progress(self, analysis_id: str, data: dict):
+        """Publish firmware analysis progress to a Redis channel."""
+        r = await self._get_redis()
+        import json
+        await r.publish(f"soc:firmware:{analysis_id}", json.dumps(data))
 
 
 scheduler = ScanScheduler()

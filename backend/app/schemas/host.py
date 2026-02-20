@@ -33,6 +33,13 @@ class HostOut(BaseModel):
     response_time_ms: int | None = None
     firmware_url: str | None = None
     open_port_count: int = 0
+    # Firmware analysis fields
+    fw_path: str | None = None
+    fw_hash: str | None = None
+    emba_log_dir: str | None = None
+    risk_report: str | None = None
+    risk_score: float | None = None
+    firmware_status: str | None = None
     discovered_at: datetime
     last_seen: datetime
     tags: list[TagBrief] = []

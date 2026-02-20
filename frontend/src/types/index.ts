@@ -55,6 +55,13 @@ export interface Host {
   response_time_ms: number | null;
   firmware_url: string | null;
   open_port_count: number;
+  // Firmware analysis fields
+  fw_path: string | null;
+  fw_hash: string | null;
+  emba_log_dir: string | null;
+  risk_report: string | null;
+  risk_score: number | null;
+  firmware_status: string | null;
   discovered_at: string;
   last_seen: string;
   tags: Tag[];
@@ -119,6 +126,14 @@ export interface DashboardStats {
     total: number;
     open: number;
   };
+  firmware: {
+    total: number;
+    completed: number;
+    running: number;
+    avg_risk_score: number | null;
+    max_risk_score: number | null;
+    hosts_with_firmware_url: number;
+  };
   top_services: { name: string; count: number }[];
   top_ports: { port: number; count: number }[];
   os_distribution: { os: string; count: number }[];
@@ -172,4 +187,72 @@ export interface WSMessage {
   error?: string;
   hosts?: number;
   ports?: number;
+}
+
+/* ─── Firmware Analysis Types ─────────────────── */
+
+export type FirmwareStatus =
+  | 'pending'
+  | 'downloading'
+  | 'downloaded'
+  | 'emba_queued'
+  | 'emba_running'
+  | 'emba_done'
+  | 'triaging'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
+
+export interface FirmwareAnalysis {
+  id: string;
+  host_mac: string;
+  status: FirmwareStatus;
+  current_stage: number;
+  total_stages: number;
+  stage_label: string | null;
+  fw_url: string | null;
+  fw_path: string | null;
+  fw_hash: string | null;
+  fw_size_bytes: number | null;
+  emba_log_dir: string | null;
+  risk_report: string | null;
+  risk_score: number | null;
+  findings_count: number | null;
+  critical_count: number | null;
+  high_count: number | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+}
+
+export interface FirmwareAnalysisListResponse {
+  items: FirmwareAnalysis[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface FirmwareAnalysisSummary {
+  total: number;
+  pending: number;
+  running: number;
+  completed: number;
+  failed: number;
+  avg_risk_score: number | null;
+  max_risk_score: number | null;
+  total_critical: number;
+  total_high: number;
+  hosts_with_firmware_url: number;
+  hosts_analysed: number;
+}
+
+export interface FirmwareReport {
+  analysis_id: string;
+  host_mac: string;
+  risk_score: number | null;
+  findings_count: number | null;
+  critical_count: number | null;
+  high_count: number | null;
+  report: string;
 }

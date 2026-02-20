@@ -8,11 +8,13 @@ import {
   X,
   Save,
   Edit3,
+  Shield,
+  Play,
 } from 'lucide-react';
-import { hostsApi, tagsApi } from '../../api/client';
+import { hostsApi, tagsApi, firmwareApi } from '../../api/client';
 import { useFetch } from '../../hooks/useData';
 import { formatDate, portLabel } from '../../utils/formatters';
-import type { HostDetail as HostDetailType, Tag, HostUpdate } from '../../types';
+import type { HostDetail as HostDetailType, Tag, HostUpdate, FirmwareAnalysis } from '../../types';
 
 function HostDetail() {
   const { mac } = useParams<{ mac: string }>();
@@ -23,6 +25,8 @@ function HostDetail() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [fwLoading, setFwLoading] = useState(false);
+  const [fwAnalyses, setFwAnalyses] = useState<FirmwareAnalysis[]>([]);
 
   // Editable form fields
   const [form, setForm] = useState<HostUpdate>({});
@@ -35,6 +39,15 @@ function HostDetail() {
   useEffect(() => {
     tagsApi.list().then(setAllTags).catch(() => {});
   }, []);
+
+  // Load firmware analyses for this host
+  useEffect(() => {
+    if (mac) {
+      firmwareApi.list({ host_mac: mac, page_size: '10' })
+        .then(res => setFwAnalyses(res.items))
+        .catch(() => {});
+    }
+  }, [mac]);
 
   // Sync form state when host data loads or changes
   useEffect(() => {
@@ -76,6 +89,20 @@ function HostDetail() {
   const handleRemoveTag = async (tagId: string) => {
     await hostsApi.removeTag(mac!, tagId);
     reload();
+  };
+
+  const handleStartFirmwareAnalysis = async () => {
+    if (!mac || !host?.firmware_url) return;
+    setFwLoading(true);
+    try {
+      const analysis = await firmwareApi.start(mac);
+      setFwAnalyses(prev => [analysis, ...prev]);
+      navigate(`/firmware/${analysis.id}`);
+    } catch (e) {
+      alert(`Failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    } finally {
+      setFwLoading(false);
+    }
   };
 
   if (loading && !host) {
@@ -193,6 +220,90 @@ function HostDetail() {
               </button>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* ── Firmware Analysis ───────────── */}
+      <div className="card mb-xl">
+        <div className="flex items-center justify-between mb-lg">
+          <div className="flex items-center gap-sm">
+            <Shield size={16} />
+            <span style={{ fontWeight: 600, fontSize: 13 }}>Firmware Analysis</span>
+            {host.firmware_status && (
+              <span className={`badge badge-${host.firmware_status === 'completed' ? 'open' : host.firmware_status === 'failed' ? 'closed' : 'filtered'}`}>
+                {host.firmware_status}
+              </span>
+            )}
+          </div>
+          {host.firmware_url && (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={handleStartFirmwareAnalysis}
+              disabled={fwLoading}
+            >
+              <Play size={14} /> {fwLoading ? 'Starting...' : 'Analyse Firmware'}
+            </button>
+          )}
+        </div>
+
+        {host.risk_score != null && (
+          <div className="flex gap-xl mb-lg">
+            <div>
+              <span className="detail-label">Risk Score</span>
+              <span style={{
+                fontSize: 24, fontWeight: 800,
+                color: host.risk_score >= 8 ? 'var(--accent-red)' : host.risk_score >= 6 ? 'var(--accent-yellow)' : host.risk_score >= 4 ? 'var(--accent-blue)' : 'var(--accent-green)'
+              }}>
+                {host.risk_score}/10
+              </span>
+            </div>
+          </div>
+        )}
+
+        {fwAnalyses.length > 0 ? (
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>Recent Analyses</div>
+            {fwAnalyses.slice(0, 3).map((a) => (
+              <div
+                key={a.id}
+                className="flex items-center justify-between"
+                style={{
+                  padding: '8px 0',
+                  borderBottom: '1px solid var(--border-subtle)',
+                  cursor: 'pointer',
+                }}
+                onClick={() => navigate(`/firmware/${a.id}`)}
+              >
+                <div className="flex items-center gap-sm">
+                  <span className={`badge badge-${a.status === 'completed' ? 'open' : a.status === 'failed' ? 'closed' : 'filtered'}`}>
+                    {a.status}
+                  </span>
+                  <span className="text-sm">
+                    {a.stage_label || `Stage ${a.current_stage}/${a.total_stages}`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-sm">
+                  {a.risk_score != null && (
+                    <span style={{
+                      fontWeight: 700,
+                      color: a.risk_score >= 8 ? 'var(--accent-red)' : a.risk_score >= 6 ? 'var(--accent-yellow)' : 'var(--accent-green)'
+                    }}>
+                      {a.risk_score}/10
+                    </span>
+                  )}
+                  <span className="text-muted text-sm">{a.created_at ? formatDate(a.created_at) : ''}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : !host.firmware_url ? (
+          <p className="text-muted text-sm">
+            No firmware URL set. Edit this host to add a firmware URL, then analyse it.
+          </p>
+        ) : (
+          <p className="text-muted text-sm">
+            No analyses yet. Click "Analyse Firmware" to begin.
+          </p>
         )}
       </div>
 
