@@ -80,6 +80,7 @@ async def run_emba(
     if on_progress:
         on_progress(f"EMBA running: {' '.join(cmd)}")
 
+    proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,

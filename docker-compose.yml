@@ -52,6 +52,7 @@ services:
       - scan_results:/app/scan_results
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
+      - /opt/emba:/opt/emba:ro
     depends_on:
       db:
         condition: service_healthy
@@ -100,6 +101,7 @@ services:
       - scan_results:/app/scan_results
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
+      - /opt/emba:/opt/emba:ro
     depends_on:
       db:
         condition: service_healthy
