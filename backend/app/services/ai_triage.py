@@ -8,6 +8,7 @@ instance for ranked risk reporting.
 
 from __future__ import annotations
 
+import asyncio
 import glob
 import inspect
 import pathlib
@@ -122,6 +123,52 @@ def _count_severity(report: str) -> tuple[int, int]:
     return critical, high
 
 
+def _build_fallback_report(
+    findings: list[str],
+    ip: str,
+    vendor: str,
+    ports: str,
+    mac: str,
+) -> tuple[str, float, int, int]:
+    """Create a deterministic fallback report if Ollama returns empty output."""
+    lowered = [f.lower() for f in findings]
+    critical_count = sum(
+        1 for f in lowered if any(k in f for k in ["critical", "cve-", "remote code", "rce", "unauthenticated"])
+    )
+    high_count = sum(
+        1 for f in lowered if any(k in f for k in ["high", "hardcoded", "password", "credential", "telnet", "default"])
+    )
+
+    # Keep score conservative and bounded
+    base = 3.0
+    risk_score = min(10.0, base + min(4, critical_count) * 1.5 + min(4, high_count) * 0.75)
+    if critical_count == 0 and high_count == 0 and findings:
+        risk_score = 5.0
+
+    preview = "\n".join(f"- {line}" for line in findings[:20])
+    report = (
+        f"## Risk Score: {risk_score:.1f}/10\n\n"
+        "## Executive Summary\n\n"
+        "Automated fallback triage was used because Ollama returned an empty response. "
+        "This report is generated from EMBA finding heuristics and should be reviewed manually.\n\n"
+        "## Critical\n\n"
+        f"Estimated critical findings: **{critical_count}**\n\n"
+        "## High\n\n"
+        f"Estimated high findings: **{high_count}**\n\n"
+        "## Medium\n\n"
+        "Potential medium findings may exist; manual validation recommended.\n\n"
+        "## Low\n\n"
+        "Low-severity and informational findings are not exhaustively categorized in fallback mode.\n\n"
+        "## Extracted Findings (Sample)\n\n"
+        f"{preview if preview else '- No findings extracted'}\n\n"
+        "## CVE Summary\n\n"
+        "| CVE ID | CVSS | Notes |\n"
+        "|---|---:|---|\n"
+        "| N/A | N/A | Fallback mode - review EMBA raw logs |\n"
+    )
+    return report, risk_score, critical_count, high_count
+
+
 async def ai_triage_ollama(
     findings: list[str],
     ip: str,
@@ -151,25 +198,51 @@ async def ai_triage_ollama(
 
     log.info("ai_triage_start", model=ollama_model, findings=len(findings))
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(300, connect=30)) as client:
-        resp = await client.post(
-            f"{ollama_url}/api/generate",
-            json={
-                "model": ollama_model,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.2,
-                    "num_predict": 4096,
-                },
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        report = data.get("response", "")
+    report = ""
+    attempts = [4096, 2048, 1024]
 
-    if not report.strip():
-        raise RuntimeError("Ollama returned an empty response")
+    async with httpx.AsyncClient(timeout=httpx.Timeout(360, connect=30)) as client:
+        for attempt_idx, num_predict in enumerate(attempts, start=1):
+            await notify(
+                f"AI triage attempt {attempt_idx}/{len(attempts)} using {ollama_model} "
+                f"(num_predict={num_predict})"
+            )
+            resp = await client.post(
+                f"{ollama_url}/api/generate",
+                json={
+                    "model": ollama_model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "keep_alive": "10m",
+                    "options": {
+                        "temperature": 0.2,
+                        "num_predict": num_predict,
+                    },
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            report = (data.get("response") or "").strip()
+
+            if report:
+                break
+
+            log.warning(
+                "ai_triage_empty_response",
+                model=ollama_model,
+                attempt=attempt_idx,
+                response_keys=list(data.keys()) if isinstance(data, dict) else [],
+                done=data.get("done") if isinstance(data, dict) else None,
+                done_reason=data.get("done_reason") if isinstance(data, dict) else None,
+            )
+
+            if attempt_idx < len(attempts):
+                await asyncio.sleep(1.0 * attempt_idx)
+
+    if not report:
+        await notify("Ollama returned empty responses; using fallback triage report")
+        log.warning("ai_triage_fallback_used", model=ollama_model, findings=len(findings))
+        return _build_fallback_report(findings, ip, vendor, ports, mac)
 
     risk_score = _parse_risk_score(report)
     critical_count, high_count = _count_severity(report)
