@@ -32,8 +32,8 @@ class Settings(BaseSettings):
     worker_concurrency: int = 4
 
     # ── Firmware Analysis ───────────────────────
-    emba_path: str = "/home/cos777/emba/emba"  # Fresh EMBA installation
-    emba_home: str = "/home/cos777/emba"        # EMBA installation directory
+    emba_path: str = "/opt/emba/emba"
+    emba_home: str = "/opt/emba"
     emba_timeout: int = 7200                     # 2 hours max per device
     emba_gpt_level: str = "1"                    # 1=scripts/configs, 2=+binary
     firmware_dir: str = "/app/firmware"

@@ -49,8 +49,8 @@ async def run_emba(
         asyncio.TimeoutError: If EMBA exceeds the timeout.
     """
     log_dir = str(EMBA_LOGS / f"device_{device_id}_{ip.replace('.', '_')}")
-    emba_path = getattr(settings, "emba_path", "/home/cos777/emba/emba")
-    emba_home = getattr(settings, "emba_home", "/home/cos777/emba")
+    emba_path = getattr(settings, "emba_path", "/opt/emba/emba")
+    emba_home = getattr(settings, "emba_home", "/opt/emba")
 
     if on_progress:
         on_progress(f"Starting EMBA scan on {ip} ({fw_path})")
@@ -60,12 +60,7 @@ async def run_emba(
     env = os.environ.copy()
     env["GPT_OPTION"] = gpt_level
 
-    # Build EMBA command - run from EMBA home directory for proper Docker setup
-    cmd = [
-        "sudo",
-        "bash", "-c",
-        f"cd {emba_home} && ./emba -f {fw_path} -l {log_dir} -F -y"
-    ]
+    cmd = [emba_path, "-f", fw_path, "-l", log_dir, "-F", "-y"]
 
     # Check for profile availability and extend command if needed
     gpt_profile = pathlib.Path(emba_home) / "scan-profiles/default-scan-gpt.emba"
@@ -73,15 +68,27 @@ async def run_emba(
 
     if gpt_profile.exists():
         cmd = [
-            "sudo",
-            "bash", "-c",
-            f"cd {emba_home} && ./emba -f {fw_path} -l {log_dir} -p scan-profiles/default-scan-gpt.emba -F -y"
+            emba_path,
+            "-f",
+            fw_path,
+            "-l",
+            log_dir,
+            "-p",
+            "scan-profiles/default-scan-gpt.emba",
+            "-F",
+            "-y",
         ]
     elif default_profile.exists():
         cmd = [
-            "sudo",
-            "bash", "-c",
-            f"cd {emba_home} && ./emba -f {fw_path} -l {log_dir} -p scan-profiles/default-scan.emba -F -y"
+            emba_path,
+            "-f",
+            fw_path,
+            "-l",
+            log_dir,
+            "-p",
+            "scan-profiles/default-scan.emba",
+            "-F",
+            "-y",
         ]
 
     if on_progress:
@@ -91,6 +98,7 @@ async def run_emba(
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
+            cwd=emba_home,
             env=env,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,

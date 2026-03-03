@@ -135,6 +135,21 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 
 Interactive API docs: [http://localhost:8001/api/docs](http://localhost:8001/api/docs)
 
+## Update Containers and Tools
+
+For full SOC stack maintenance (containers + EMBA + Ollama model), run:
+
+```bash
+./update_soc_stack.sh
+```
+
+This will:
+- pull latest registry images (`postgres`, `redis`)
+- rebuild app containers (`api`, `worker`, `frontend`) with latest base layers
+- restart the stack with Docker Compose
+- refresh EMBA and the configured Ollama model
+- run API/frontend health checks
+
 ## GPU Setup (NVIDIA)
 
 The recommended approach is to run **Ollama natively** on the host so it has direct GPU access:
@@ -338,6 +353,7 @@ soc_firmai/
 | `OLLAMA_URL`          | `http://localhost:11434`    | Ollama API endpoint                  |
 | `OLLAMA_MODEL`        | `qwen3:4b`                  | LLM model for AI triage              |
 | `OLLAMA_PORT`         | `11434`                     | Ollama external port                 |
+| `EMBA_HOME`           | `/home/cos777/emba`         | Host path mounted to `/opt/emba`     |
 | `EMBA_PATH`           | `/opt/emba/emba`            | Path to EMBA binary                  |
 | `EMBA_TIMEOUT`        | `7200`                      | EMBA scan timeout (seconds)          |
 | `EMBA_GPT_LEVEL`      | `1`                         | EMBA GPT-assisted scan level (0-5)   |

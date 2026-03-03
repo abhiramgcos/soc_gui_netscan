@@ -9,7 +9,7 @@
   "os_cpe": null,
   "is_up": true,
   "response_time_ms": 26,
-  "firmware_url": null,
+  "firmware_url": "https://downloads.openwrt.org/releases/23.05.3/targets/ath79/generic/openwrt-23.05.3-ath79-generic-buffalo_wzr-hp-g450h-squashfs-factory.bin",
   "open_port_count": 0,
   "discovered_at": "2026-02-09T05:59:15.682701+00:00",
   "last_seen": "2026-02-09T06:16:58.702136+00:00",

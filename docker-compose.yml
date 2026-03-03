@@ -42,6 +42,7 @@ services:
       OLLAMA_URL: ${OLLAMA_URL:-http://localhost:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
       EMBA_PATH: ${EMBA_PATH:-/opt/emba/emba}
+      EMBA_HOME: /opt/emba
       EMBA_TIMEOUT: ${EMBA_TIMEOUT:-7200}
       EMBA_GPT_LEVEL: ${EMBA_GPT_LEVEL:-1}
     ports:
@@ -52,7 +53,7 @@ services:
       - scan_results:/app/scan_results
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
-      - /opt/emba:/opt/emba:ro
+      - ${EMBA_HOME:-/home/cos777/emba}:/opt/emba:ro
     depends_on:
       db:
         condition: service_healthy
@@ -93,6 +94,7 @@ services:
       OLLAMA_URL: ${OLLAMA_URL:-http://localhost:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
       EMBA_PATH: ${EMBA_PATH:-/opt/emba/emba}
+      EMBA_HOME: /opt/emba
       EMBA_TIMEOUT: ${EMBA_TIMEOUT:-7200}
       EMBA_GPT_LEVEL: ${EMBA_GPT_LEVEL:-1}
     volumes:
@@ -101,7 +103,7 @@ services:
       - scan_results:/app/scan_results
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
-      - /opt/emba:/opt/emba:ro
+      - ${EMBA_HOME:-/home/cos777/emba}:/opt/emba:ro
     depends_on:
       db:
         condition: service_healthy
