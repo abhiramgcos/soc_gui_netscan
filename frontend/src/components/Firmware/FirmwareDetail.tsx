@@ -21,6 +21,7 @@ import type { FirmwareAnalysis, FirmwareReport } from '../../types';
 
 const STAGE_ICONS = [Download, Cpu, Brain];
 const STAGE_NAMES = ['Download Firmware', 'EMBA Analysis', 'AI Triage'];
+const ANSI_ESCAPE_RE = /\u001b\[[0-?]*[ -/]*[@-~]/g;
 
 function riskColor(score: number | null): string {
   if (score === null) return 'var(--text-muted)';
@@ -82,8 +83,9 @@ function FirmwareDetail() {
 
         if (payload.message) {
           const timestamp = new Date().toLocaleTimeString();
-          const entry = `[${timestamp}] ${payload.message}`;
-          setLiveMessage(payload.message);
+          const cleanMessage = payload.message.replace(ANSI_ESCAPE_RE, '');
+          const entry = `[${timestamp}] ${cleanMessage}`;
+          setLiveMessage(cleanMessage);
           setLiveLogs((prev) => [entry, ...prev].slice(0, 200));
         }
 

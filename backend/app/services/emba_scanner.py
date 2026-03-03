@@ -11,12 +11,15 @@ import asyncio
 import inspect
 import os
 import pathlib
+import re
 from typing import Awaitable, Callable
 
 from app.config import settings
 from app.utils.logging import get_logger
 
 log = get_logger("firmware.emba")
+
+ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 
 EMBA_LOGS = pathlib.Path(settings.emba_logs_dir)
 EMBA_LOGS.mkdir(parents=True, exist_ok=True)
@@ -66,6 +69,10 @@ async def run_emba(
 
     env = os.environ.copy()
     env["GPT_OPTION"] = gpt_level
+    env.setdefault("USER", "root")
+    env.setdefault("SUDO_USER", "root")
+    env.setdefault("SUDO_UID", "0")
+    env.setdefault("SUDO_GID", "0")
 
     cmd = [emba_path, "-f", fw_path, "-l", log_dir, "-F", "-y"]
 
@@ -110,6 +117,7 @@ async def run_emba(
             text = line.decode(errors="replace").strip()
             if not text:
                 continue
+            text = ANSI_ESCAPE_RE.sub("", text)
             text = text[:300]
             await notify(f"{prefix} {text}")
 

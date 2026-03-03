@@ -54,6 +54,7 @@ services:
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
       - ${EMBA_HOME:-/home/cos777/emba}:/opt/emba:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       db:
         condition: service_healthy
@@ -104,6 +105,7 @@ services:
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
       - ${EMBA_HOME:-/home/cos777/emba}:/opt/emba:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       db:
         condition: service_healthy

@@ -24,8 +24,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     grep \
     gawk \
     git \
+    docker-cli \
+    docker.io \
+    docker-compose \
+    kmod \
+    procps \
+    psmisc \
+    inotify-tools \
+    libnotify-bin \
     python3 \
     python-is-python3 \
+    && if [ -x /usr/bin/docker-cli ] && [ ! -x /usr/bin/docker ]; then ln -s /usr/bin/docker-cli /usr/bin/docker; fi \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Install RustScan ────────────────────────────
