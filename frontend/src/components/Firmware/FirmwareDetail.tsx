@@ -44,6 +44,8 @@ function FirmwareDetail() {
   const [activeTab, setActiveTab] = useState<'overview' | 'report'>('overview');
   const [report, setReport] = useState<FirmwareReport | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [liveLogs, setLiveLogs] = useState<string[]>([]);
+  const [liveMessage, setLiveMessage] = useState<string | null>(null);
 
   const { data: analysis, loading, reload } = useFetch<FirmwareAnalysis>(
     () => firmwareApi.get(id!),
@@ -56,6 +58,68 @@ function FirmwareDetail() {
     const interval = setInterval(reload, 3000);
     return () => clearInterval(interval);
   }, [analysis, reload]);
+
+  // Real-time firmware progress via WebSocket
+  useEffect(() => {
+    if (!id) return;
+
+    const configuredBase = import.meta.env.VITE_WS_URL?.trim();
+    const fallbackBase = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`;
+    const wsBase = configuredBase || fallbackBase;
+    const wsUrl = `${wsBase.replace(/\/$/, '')}/ws/firmware/${id}`;
+
+    const ws = new WebSocket(wsUrl);
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data) as {
+          type?: string;
+          message?: string;
+          stage?: number;
+          stage_label?: string;
+          error?: string;
+        };
+
+        if (payload.message) {
+          const timestamp = new Date().toLocaleTimeString();
+          const entry = `[${timestamp}] ${payload.message}`;
+          setLiveMessage(payload.message);
+          setLiveLogs((prev) => [entry, ...prev].slice(0, 200));
+        }
+
+        if (payload.error) {
+          const timestamp = new Date().toLocaleTimeString();
+          const entry = `[${timestamp}] ERROR: ${payload.error}`;
+          setLiveLogs((prev) => [entry, ...prev].slice(0, 200));
+        }
+
+        if (payload.type === 'firmware_completed' || payload.type === 'firmware_failed') {
+          reload();
+        }
+      } catch {
+        // ignore malformed websocket messages
+      }
+    };
+
+    ws.onopen = () => {
+      const timestamp = new Date().toLocaleTimeString();
+      setLiveLogs((prev) => [`[${timestamp}] Live firmware stream connected`, ...prev].slice(0, 200));
+    };
+
+    ws.onerror = () => {
+      const timestamp = new Date().toLocaleTimeString();
+      setLiveLogs((prev) => [`[${timestamp}] Live firmware stream error`, ...prev].slice(0, 200));
+    };
+
+    ws.onclose = () => {
+      const timestamp = new Date().toLocaleTimeString();
+      setLiveLogs((prev) => [`[${timestamp}] Live firmware stream disconnected`, ...prev].slice(0, 200));
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [id, reload]);
 
   // Load report when completed and report tab selected
   useEffect(() => {
@@ -182,6 +246,24 @@ function FirmwareDetail() {
           </div>
         )}
 
+        {(liveMessage || liveLogs.length > 0) && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: '8px 12px',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-primary)',
+              borderRadius: 6,
+              fontSize: 13,
+            }}
+          >
+            <div style={{ fontWeight: 600, marginBottom: 6 }}>Live Progress</div>
+            <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+              {liveMessage || 'Waiting for next event...'}
+            </div>
+          </div>
+        )}
+
         {analysis.error_message && (
           <div
             style={{
@@ -265,6 +347,33 @@ function FirmwareDetail() {
           <FileText size={14} style={{ marginRight: 4 }} />
           AI Report
         </button>
+      </div>
+
+      {/* ── Live Logs ───────────────────── */}
+      <div className="panel mb-xl">
+        <div className="panel-body">
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>EMBA / AI Real-Time Logs</div>
+          <div
+            style={{
+              maxHeight: 220,
+              overflowY: 'auto',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-primary)',
+              borderRadius: 6,
+              padding: 10,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 12,
+              lineHeight: 1.5,
+              color: 'var(--text-secondary)',
+            }}
+          >
+            {liveLogs.length > 0 ? (
+              liveLogs.map((line, index) => <div key={`${index}-${line}`}>{line}</div>)
+            ) : (
+              <div style={{ color: 'var(--text-muted)' }}>No live messages yet.</div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ── Overview Tab ────────────────── */}

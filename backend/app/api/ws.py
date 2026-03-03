@@ -7,7 +7,9 @@ import json
 import uuid
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+import redis.asyncio as aioredis
 
+from app.config import settings
 from app.utils.logging import get_logger
 
 router = APIRouter(tags=["websocket"])
@@ -119,11 +121,31 @@ async def firmware_websocket(websocket: WebSocket, analysis_id: uuid.UUID):
     """Subscribe to real-time updates for a firmware analysis."""
     aid = str(analysis_id)
     await manager.connect_firmware(websocket, aid)
+
+    redis = aioredis.from_url(settings.redis_url, decode_responses=True)
+    pubsub = redis.pubsub()
+    channel = f"soc:firmware:{aid}"
+    await pubsub.subscribe(channel)
+
     try:
         while True:
-            data = await websocket.receive_text()
-            if data == "ping":
-                await websocket.send_text(json.dumps({"type": "pong"}))
+            try:
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=0.5)
+                if data == "ping":
+                    await websocket.send_text(json.dumps({"type": "pong"}))
+            except asyncio.TimeoutError:
+                pass
+
+            message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=0.1)
+            if message and message.get("data"):
+                await websocket.send_text(str(message["data"]))
     except WebSocketDisconnect:
         manager.disconnect_firmware(websocket, aid)
         log.info("ws_firmware_disconnected", analysis_id=aid)
+    finally:
+        try:
+            await pubsub.unsubscribe(channel)
+            await pubsub.close()
+            await redis.close()
+        except Exception:
+            pass

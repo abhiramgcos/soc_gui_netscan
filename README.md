@@ -11,23 +11,23 @@ Full-stack network discovery, asset inventory, and **firmware security analysis*
 └─────────────┘      └──────┬───────┘      └───────────┘
                             │
                      ┌──────▼───────┐      ┌───────────┐
-                     │    Worker     │◄────►│   Redis    │
-                     │  (Pipeline)   │      │  (Queue)   │
+                     │    Worker    │◄────►│   Redis   │
+                     │  (Pipeline)  │      │  (Queue)  │
                      └──────┬───────┘      └───────────┘
                             │
                      ┌──────▼───────┐      ┌───────────┐
-                     │   EMBA       │      │  Ollama    │
-                     │  (Firmware)   │      │  (LLM)    │
+                     │   EMBA       │      │  Ollama   │
+                     │  (Firmware)  │      │  (LLM)    │
                      └──────────────┘      └───────────┘
 ```
 
 ### Network Scanning Pipeline (4 Stages)
 
-| Stage | Tool       | Purpose                          |
+| Stage | Tool       | Purpose                         |
 |-------|-----------|----------------------------------|
 | 1     | nmap -sn  | Ping sweep — discover live hosts |
 | 2     | arp-scan  | ARP lookup — MAC + vendor info   |
-| 3     | RustScan  | Fast port scan (all 65535 ports)  |
+| 3     | RustScan  | Fast port scan (all 65535 ports) |
 | 4     | nmap -sV  | Deep scan — service/OS detection |
 
 ### Firmware Analysis Pipeline (3 Stages)
