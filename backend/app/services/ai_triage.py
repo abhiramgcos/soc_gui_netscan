@@ -9,9 +9,10 @@ instance for ranked risk reporting.
 from __future__ import annotations
 
 import glob
+import inspect
 import pathlib
 import re
-from typing import Callable
+from typing import Awaitable, Callable
 
 import httpx
 
@@ -128,7 +129,7 @@ async def ai_triage_ollama(
     ports: str,
     mac: str,
     *,
-    on_progress: Callable[[str], None] | None = None,
+    on_progress: Callable[[str], Awaitable[None] | None] | None = None,
 ) -> tuple[str, float | None, int, int]:
     """
     Send findings to Ollama for AI triage and return
@@ -139,8 +140,14 @@ async def ai_triage_ollama(
 
     prompt = _build_prompt(findings, ip, vendor, ports, mac)
 
-    if on_progress:
-        on_progress(f"Sending {len(findings)} findings to AI ({ollama_model}) for triage")
+    async def notify(message: str):
+        if not on_progress:
+            return
+        maybe_awaitable = on_progress(message)
+        if inspect.isawaitable(maybe_awaitable):
+            await maybe_awaitable
+
+    await notify(f"Sending {len(findings)} findings to AI ({ollama_model}) for triage")
 
     log.info("ai_triage_start", model=ollama_model, findings=len(findings))
 
@@ -175,11 +182,10 @@ async def ai_triage_ollama(
         report_len=len(report),
     )
 
-    if on_progress:
-        on_progress(
-            f"AI triage complete — Risk Score: {risk_score}/10, "
-            f"{critical_count} critical, {high_count} high findings"
-        )
+    await notify(
+        f"AI triage complete — Risk Score: {risk_score}/10, "
+        f"{critical_count} critical, {high_count} high findings"
+    )
 
     return report, risk_score, critical_count, high_count
 
@@ -191,7 +197,7 @@ async def run_triage(
     ports: str,
     mac: str,
     *,
-    on_progress: Callable[[str], None] | None = None,
+    on_progress: Callable[[str], Awaitable[None] | None] | None = None,
 ) -> tuple[str, float | None, int, int, int]:
     """
     Full Stage C: extract findings + AI triage.
@@ -199,7 +205,9 @@ async def run_triage(
     Returns (report, risk_score, findings_count, critical_count, high_count).
     """
     if on_progress:
-        on_progress(f"Extracting EMBA findings from {emba_log_dir}")
+        maybe_awaitable = on_progress(f"Extracting EMBA findings from {emba_log_dir}")
+        if inspect.isawaitable(maybe_awaitable):
+            await maybe_awaitable
 
     findings = extract_findings(emba_log_dir)
 
@@ -225,6 +233,8 @@ async def run_triage(
     report_path.write_text(report)
 
     if on_progress:
-        on_progress(f"Triage report saved → {report_path}")
+        maybe_awaitable = on_progress(f"Triage report saved → {report_path}")
+        if inspect.isawaitable(maybe_awaitable):
+            await maybe_awaitable
 
     return report, risk_score, len(findings), critical_count, high_count

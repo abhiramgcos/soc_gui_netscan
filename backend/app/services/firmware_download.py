@@ -8,8 +8,9 @@ computes a SHA-256 hash, and records the local path.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import pathlib
-from typing import Callable
+from typing import Awaitable, Callable
 
 import httpx
 
@@ -28,7 +29,7 @@ async def download_firmware(
     mac: str,
     *,
     dest_dir: pathlib.Path = FW_DIR,
-    on_progress: Callable[[str], None] | None = None,
+    on_progress: Callable[[str], Awaitable[None] | None] | None = None,
     timeout: int = 120,
 ) -> tuple[pathlib.Path, str, int]:
     """
@@ -40,8 +41,14 @@ async def download_firmware(
     fname = f"{ip.replace('.', '_')}_{mac.replace(':', '')}.bin"
     dest = dest_dir / fname
 
-    if on_progress:
-        on_progress(f"Downloading firmware from {url}")
+    async def notify(message: str):
+        if not on_progress:
+            return
+        maybe_awaitable = on_progress(message)
+        if inspect.isawaitable(maybe_awaitable):
+            await maybe_awaitable
+
+    await notify(f"Downloading firmware from {url}")
 
     log.info("download_start", url=url, dest=str(dest))
 
@@ -67,7 +74,6 @@ async def download_firmware(
     hex_digest = sha.hexdigest()
     log.info("download_done", dest=str(dest), sha256=hex_digest[:16], size=total)
 
-    if on_progress:
-        on_progress(f"Downloaded {total:,} bytes → {dest.name}  SHA256: {hex_digest[:16]}…")
+    await notify(f"Downloaded {total:,} bytes → {dest.name}  SHA256: {hex_digest[:16]}…")
 
     return dest, hex_digest, total

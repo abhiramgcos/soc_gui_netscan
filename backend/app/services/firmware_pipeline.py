@@ -138,14 +138,11 @@ async def run_firmware_pipeline(
         if not fw_url:
             raise ValueError(f"No firmware URL configured for device {host_mac}")
 
-        async def download_progress(msg: str):
-            await progress(msg, 1)
-
         fw_path, fw_hash, fw_size = await download_firmware(
             url=fw_url,
             ip=ip,
             mac=host_mac,
-            on_progress=lambda msg: None,  # sync shim
+            on_progress=lambda msg: progress(msg, 1),
         )
 
         # Persist Stage A results
@@ -193,7 +190,7 @@ async def run_firmware_pipeline(
             fw_path=str(fw_path),
             device_id=str(aid)[:8],
             ip=ip,
-            on_progress=lambda msg: None,  # sync shim
+            on_progress=lambda msg: progress(msg, 2),
         )
 
         # Persist Stage B results
@@ -240,7 +237,7 @@ async def run_firmware_pipeline(
             vendor=vendor,
             ports=ports_str,
             mac=host_mac,
-            on_progress=lambda msg: None,  # sync shim
+            on_progress=lambda msg: progress(msg, 3),
         )
 
         # Persist Stage C results + mark completed

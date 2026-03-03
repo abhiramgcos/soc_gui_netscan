@@ -8,9 +8,10 @@ the log directory path.  Supports optional GPT-assisted scanning.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import os
 import pathlib
-from typing import Callable
+from typing import Awaitable, Callable
 
 from app.config import settings
 from app.utils.logging import get_logger
@@ -27,7 +28,7 @@ async def run_emba(
     ip: str,
     *,
     gpt_level: str = "1",
-    on_progress: Callable[[str], None] | None = None,
+    on_progress: Callable[[str], Awaitable[None] | None] | None = None,
     timeout: int = 7200,  # 2 hours max
 ) -> str:
     """
@@ -52,8 +53,14 @@ async def run_emba(
     emba_path = getattr(settings, "emba_path", "/opt/emba/emba")
     emba_home = getattr(settings, "emba_home", "/opt/emba")
 
-    if on_progress:
-        on_progress(f"Starting EMBA scan on {ip} ({fw_path})")
+    async def notify(message: str):
+        if not on_progress:
+            return
+        maybe_awaitable = on_progress(message)
+        if inspect.isawaitable(maybe_awaitable):
+            await maybe_awaitable
+
+    await notify(f"Starting EMBA scan on {ip} ({fw_path})")
 
     log.info("emba_start", fw_path=fw_path, log_dir=log_dir, gpt_level=gpt_level)
 
@@ -91,8 +98,20 @@ async def run_emba(
             "-y",
         ]
 
-    if on_progress:
-        on_progress(f"EMBA running on {ip} (timeout: {timeout}s)")
+    await notify(f"EMBA running on {ip} (timeout: {timeout}s)")
+
+    async def stream_output(stream: asyncio.StreamReader | None, prefix: str):
+        if stream is None:
+            return
+        while True:
+            line = await stream.readline()
+            if not line:
+                break
+            text = line.decode(errors="replace").strip()
+            if not text:
+                continue
+            text = text[:300]
+            await notify(f"{prefix} {text}")
 
     proc = None
     try:
@@ -104,23 +123,32 @@ async def run_emba(
             stderr=asyncio.subprocess.PIPE,
         )
 
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+        stdout_task = asyncio.create_task(stream_output(proc.stdout, "[EMBA]"))
+        stderr_task = asyncio.create_task(stream_output(proc.stderr, "[EMBA-ERR]"))
+
+        await asyncio.wait_for(proc.wait(), timeout=timeout)
+        await asyncio.gather(stdout_task, stderr_task)
+
+        stderr_tail = ""
+        if proc.stderr is not None:
+            remaining = await proc.stderr.read()
+            stderr_tail = remaining.decode(errors="replace")[:2000] if remaining else ""
 
         if proc.returncode != 0:
-            err_msg = stderr.decode(errors="replace")[:2000] if stderr else "Unknown error"
+            err_msg = stderr_tail or "Unknown error"
             log.error("emba_failed", returncode=proc.returncode, stderr=err_msg[:500])
             raise RuntimeError(
                 f"EMBA exited with code {proc.returncode}: {err_msg[:500]}"
             )
 
         log.info("emba_done", log_dir=log_dir)
-        if on_progress:
-            on_progress(f"EMBA scan completed for {ip}")
+        await notify(f"EMBA scan completed for {ip}")
 
     except asyncio.TimeoutError:
         log.error("emba_timeout", timeout=timeout)
         if proc and proc.returncode is None:
             proc.kill()
+        await notify(f"EMBA scan timed out after {timeout}s")
         raise
 
     return log_dir
