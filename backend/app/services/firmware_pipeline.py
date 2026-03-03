@@ -84,6 +84,7 @@ async def run_firmware_pipeline(
         "AI Triage & Risk Scoring",
     ]
 
+    ip = "unknown"  # Default IP in case DB fetch fails
     async def progress(msg: str, stage: int = 0):
         if on_progress:
             await on_progress(msg, {

@@ -13,11 +13,12 @@ from typing import Callable
 
 import httpx
 
+from app.config import settings
 from app.utils.logging import get_logger
 
 log = get_logger("firmware.download")
 
-FW_DIR = pathlib.Path("/app/firmware")
+FW_DIR = pathlib.Path(settings.firmware_dir)
 FW_DIR.mkdir(parents=True, exist_ok=True)
 
 

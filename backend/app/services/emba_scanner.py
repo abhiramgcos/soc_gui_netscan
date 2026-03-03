@@ -17,7 +17,7 @@ from app.utils.logging import get_logger
 
 log = get_logger("firmware.emba")
 
-EMBA_LOGS = pathlib.Path("/app/emba_logs")
+EMBA_LOGS = pathlib.Path(settings.emba_logs_dir)
 EMBA_LOGS.mkdir(parents=True, exist_ok=True)
 
 
@@ -49,7 +49,8 @@ async def run_emba(
         asyncio.TimeoutError: If EMBA exceeds the timeout.
     """
     log_dir = str(EMBA_LOGS / f"device_{device_id}_{ip.replace('.', '_')}")
-    emba_path = getattr(settings, "emba_path", "/opt/emba/emba")
+    emba_path = getattr(settings, "emba_path", "/home/cos777/emba/emba")
+    emba_home = getattr(settings, "emba_home", "/home/cos777/emba")
 
     if on_progress:
         on_progress(f"Starting EMBA scan on {ip} ({fw_path})")
@@ -59,26 +60,32 @@ async def run_emba(
     env = os.environ.copy()
     env["GPT_OPTION"] = gpt_level
 
-    # Build EMBA command
+    # Build EMBA command - run from EMBA home directory for proper Docker setup
     cmd = [
-        "sudo", emba_path,
-        "-f", fw_path,
-        "-l", log_dir,
+        "sudo",
+        "bash", "-c",
+        f"cd {emba_home} && ./emba -f {fw_path} -l {log_dir} -F -y"
     ]
 
-    # Use GPT scan profile if available
-    gpt_profile = "/opt/emba/scan-profiles/default-scan-gpt.emba"
-    default_profile = "/opt/emba/scan-profiles/default-scan.emba"
+    # Check for profile availability and extend command if needed
+    gpt_profile = pathlib.Path(emba_home) / "scan-profiles/default-scan-gpt.emba"
+    default_profile = pathlib.Path(emba_home) / "scan-profiles/default-scan.emba"
 
-    if pathlib.Path(gpt_profile).exists():
-        cmd.extend(["-p", gpt_profile])
-    elif pathlib.Path(default_profile).exists():
-        cmd.extend(["-p", default_profile])
-
-    cmd.append("-g")  # generate grep-able log
+    if gpt_profile.exists():
+        cmd = [
+            "sudo",
+            "bash", "-c",
+            f"cd {emba_home} && ./emba -f {fw_path} -l {log_dir} -p scan-profiles/default-scan-gpt.emba -F -y"
+        ]
+    elif default_profile.exists():
+        cmd = [
+            "sudo",
+            "bash", "-c",
+            f"cd {emba_home} && ./emba -f {fw_path} -l {log_dir} -p scan-profiles/default-scan.emba -F -y"
+        ]
 
     if on_progress:
-        on_progress(f"EMBA running: {' '.join(cmd)}")
+        on_progress(f"EMBA running on {ip} (timeout: {timeout}s)")
 
     proc = None
     try:

@@ -12,6 +12,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     wget \
     sudo \
+    file \
+    binutils \
+    xxd \
+    unzip \
+    p7zip-full \
+    binwalk \
+    bash \
+    coreutils \
+    findutils \
+    grep \
+    gawk \
+    git \
+    python3 \
+    python-is-python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Install RustScan ────────────────────────────
