@@ -76,7 +76,7 @@ The RTX 5060 (8 GB VRAM) handles Qwen3 4B comfortably at full speed. For larger 
 ### 1. Clone and configure
 
 ```bash
-git clone <repo-url> && cd soc_firmai
+git clone https://github.com/abhiramgcos/soc_gui_netscan.git && cd soc_firmai
 cp .env.example .env
 # Edit .env if you need to change database credentials or ports
 ```
