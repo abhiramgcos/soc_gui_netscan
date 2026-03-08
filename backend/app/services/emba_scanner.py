@@ -56,6 +56,21 @@ async def run_emba(
     emba_path = getattr(settings, "emba_path", "/opt/emba/emba")
     emba_home = getattr(settings, "emba_home", "/opt/emba")
 
+    resolved_emba_path = pathlib.Path(emba_path)
+    fallback_emba_path = pathlib.Path(emba_home) / "emba"
+    if not (resolved_emba_path.exists() and os.access(resolved_emba_path, os.X_OK)):
+        if fallback_emba_path.exists() and os.access(fallback_emba_path, os.X_OK):
+            resolved_emba_path = fallback_emba_path
+            emba_path = str(resolved_emba_path)
+        else:
+            message = (
+                "EMBA binary not found or not executable. "
+                f"Checked EMBA_PATH='{emba_path}' and fallback '{fallback_emba_path}'. "
+                "Install EMBA (./install_emba_ollama.sh) and ensure EMBA_HOME is mounted to /opt/emba."
+            )
+            log.error("emba_binary_missing", emba_path=emba_path, emba_home=emba_home)
+            raise RuntimeError(message)
+
     async def notify(message: str):
         if not on_progress:
             return

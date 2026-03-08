@@ -354,7 +354,7 @@ soc_firmai/
 | `OLLAMA_URL`          | `http://localhost:11434`    | Ollama API endpoint                  |
 | `OLLAMA_MODEL`        | `qwen3:4b`                  | LLM model for AI triage              |
 | `OLLAMA_PORT`         | `11434`                     | Ollama external port                 |
-| `EMBA_HOME`           | `/home/cos777/emba`         | Host path mounted to `/opt/emba`     |
+| `EMBA_HOME`           | `/opt/emba`                 | Host path mounted to `/opt/emba`     |
 | `EMBA_PATH`           | `/opt/emba/emba`            | Path to EMBA binary                  |
 | `EMBA_TIMEOUT`        | `7200`                      | EMBA scan timeout (seconds)          |
 | `EMBA_GPT_LEVEL`      | `1`                         | EMBA GPT-assisted scan level (0-5)   |

@@ -53,7 +53,7 @@ services:
       - scan_results:/app/scan_results
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
-      - ${EMBA_HOME:-/home/cos777/emba}:/opt/emba:ro
+      - ${EMBA_HOME:-/opt/emba}:/opt/emba:ro
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       db:
@@ -104,7 +104,7 @@ services:
       - scan_results:/app/scan_results
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
-      - ${EMBA_HOME:-/home/cos777/emba}:/opt/emba:ro
+      - ${EMBA_HOME:-/opt/emba}:/opt/emba:ro
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       db:

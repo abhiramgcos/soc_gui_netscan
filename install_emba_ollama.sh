@@ -6,6 +6,9 @@
 # ============================================================
 set -euo pipefail
 
+EMBA_HOME="${EMBA_HOME:-/opt/emba}"
+EMBA_PATH="${EMBA_PATH:-${EMBA_HOME}/emba}"
+
 # ── 1. Ollama ────────────────────────────────────────────────
 if command -v ollama &>/dev/null; then
   echo "[SKIP] Ollama already installed: $(ollama --version 2>/dev/null || true)"
@@ -39,18 +42,30 @@ else
 fi
 
 # ── 4. EMBA ─────────────────────────────────────────────────
-if [ -x /opt/emba/emba ]; then
-  echo "[SKIP] EMBA already installed at /opt/emba/emba"
+if [ -x "${EMBA_PATH}" ]; then
+  echo "[SKIP] EMBA already installed at ${EMBA_PATH}"
 else
-  echo "=== Cloning EMBA to /opt/emba ==="
-  if [ -d /opt/emba ]; then
-    sudo git -C /opt/emba pull --ff-only
+  echo "=== Preparing EMBA directory at ${EMBA_HOME} ==="
+  if [ -d "${EMBA_HOME}/.git" ]; then
+    echo "[INFO] Existing EMBA git checkout found, pulling latest changes..."
+    sudo git -C "${EMBA_HOME}" pull --ff-only
+  elif [ -d "${EMBA_HOME}" ]; then
+    if [ -z "$(sudo find "${EMBA_HOME}" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
+      echo "[INFO] Empty directory found at ${EMBA_HOME}, cloning EMBA..."
+      sudo git clone https://github.com/e-m-b-a/emba.git "${EMBA_HOME}"
+    else
+      backup_dir="${EMBA_HOME}.backup.$(date +%Y%m%d_%H%M%S)"
+      echo "[INFO] Non-git directory exists at ${EMBA_HOME}; moving it to ${backup_dir}"
+      sudo mv "${EMBA_HOME}" "${backup_dir}"
+      sudo git clone https://github.com/e-m-b-a/emba.git "${EMBA_HOME}"
+    fi
   else
-    sudo git clone https://github.com/e-m-b-a/emba.git /opt/emba
+    echo "[INFO] Cloning EMBA to ${EMBA_HOME}..."
+    sudo git clone https://github.com/e-m-b-a/emba.git "${EMBA_HOME}"
   fi
 
   echo "=== Running EMBA installer (installs system deps via apt-get) ==="
-  cd /opt/emba
+  cd "${EMBA_HOME}"
   sudo ./installer.sh -F
   echo "EMBA installed."
 fi
@@ -59,7 +74,7 @@ fi
 echo ""
 echo "====================================================="
 echo "All dependencies ready!"
-echo "  EMBA  : /opt/emba/emba"
+echo "  EMBA  : ${EMBA_PATH}"
 echo "  Ollama: $(ollama --version 2>/dev/null || true)"
 echo "  Models: $(ollama list 2>/dev/null | tail -n +2 | awk '{print $1}' | tr '\n' ' ')"
 echo ""
