@@ -8,39 +8,16 @@
   "os_accuracy": 99,
   "os_cpe": "cpe:/o:microsoft:windows_10",
   "is_up": true,
-  "response_time_ms": 2,
+  "response_time_ms": null,
   "firmware_url": null,
   "open_port_count": 3,
-  "discovered_at": "2026-02-09T05:59:15.682701+00:00",
+  "fw_path": null,
+  "fw_hash": null,
+  "emba_log_dir": null,
+  "risk_score": null,
+  "firmware_status": null,
+  "discovered_at": "2026-03-08T08:26:25.957184+00:00",
   "last_seen": "2026-02-09T05:59:15.799213+00:00",
   "tags": [],
-  "ports": [
-    {
-      "port_number": 135,
-      "protocol": "tcp",
-      "state": "open",
-      "service_name": "msrpc",
-      "service_version": null,
-      "service_product": "Microsoft Windows RPC",
-      "service_cpe": "cpe:/o:microsoft:windows"
-    },
-    {
-      "port_number": 139,
-      "protocol": "tcp",
-      "state": "open",
-      "service_name": "netbios-ssn",
-      "service_version": null,
-      "service_product": "Microsoft Windows netbios-ssn",
-      "service_cpe": "cpe:/o:microsoft:windows"
-    },
-    {
-      "port_number": 445,
-      "protocol": "tcp",
-      "state": "open",
-      "service_name": "microsoft-ds",
-      "service_version": null,
-      "service_product": null,
-      "service_cpe": null
-    }
-  ]
+  "ports": []
 }

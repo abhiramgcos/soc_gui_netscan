@@ -1,0 +1,23 @@
+{
+  "mac_address": "00:11:22:33:44:ac",
+  "ip_address": "10.0.0.112",
+  "hostname": "Arduino Y\u00fan",
+  "vendor": "Arduino",
+  "os_name": "OpenWrt",
+  "os_family": null,
+  "os_accuracy": null,
+  "os_cpe": null,
+  "is_up": true,
+  "response_time_ms": null,
+  "firmware_url": "https://downloads.openwrt.org/releases/23.05.3/targets/ath79/generic/openwrt-23.05.3-ath79-generic-arduino_yun-squashfs-sysupgrade.bin",
+  "open_port_count": 0,
+  "fw_path": null,
+  "fw_hash": null,
+  "emba_log_dir": null,
+  "risk_score": null,
+  "firmware_status": null,
+  "discovered_at": "2026-03-08T18:04:17.797838+00:00",
+  "last_seen": "2026-03-08T18:04:17.797838+00:00",
+  "tags": [],
+  "ports": []
+}
