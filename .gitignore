@@ -1,0 +1,6 @@
+*.*.pyc
+__pycache__/
+.__pycache__/*
+**/.__pycache__/*
+**/__pycache__/
+backend/alembic/versions/__pycache__/002_mac_primary_key.cpython-312.pyc
