@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import json
 import os
 import pathlib
 import re
+import subprocess
 from typing import Awaitable, Callable
 
 from app.config import settings
@@ -23,6 +25,41 @@ ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 
 EMBA_LOGS = pathlib.Path(settings.emba_logs_dir)
 EMBA_LOGS.mkdir(parents=True, exist_ok=True)
+
+
+def _resolve_host_path(container_path: str) -> str:
+    """Resolve a container path to the host path using this container's mounts."""
+    container_id = os.environ.get("HOSTNAME", "").strip()
+    if not container_id:
+        return container_path
+
+    try:
+        result = subprocess.run(
+            ["docker", "inspect", container_id, "--format", "{{json .Mounts}}"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        mounts = json.loads(result.stdout.strip() or "[]")
+        target = str(pathlib.Path(container_path))
+
+        candidates: list[tuple[str, str]] = []
+        for mount in mounts:
+            destination = str(pathlib.Path(mount.get("Destination", "")))
+            source = str(pathlib.Path(mount.get("Source", "")))
+            if destination and source:
+                candidates.append((destination, source))
+
+        for destination, source in sorted(candidates, key=lambda item: len(item[0]), reverse=True):
+            if target == destination:
+                return source
+            if target.startswith(destination + "/"):
+                suffix = target[len(destination) + 1 :]
+                return str(pathlib.Path(source) / suffix)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("emba_host_path_resolution_failed", path=container_path, error=str(exc))
+
+    return container_path
 
 
 async def run_emba(
@@ -53,6 +90,8 @@ async def run_emba(
         asyncio.TimeoutError: If EMBA exceeds the timeout.
     """
     log_dir = str(EMBA_LOGS / f"device_{device_id}_{ip.replace('.', '_')}")
+    fw_path_for_emba = _resolve_host_path(fw_path)
+    log_dir_for_emba = _resolve_host_path(log_dir)
     emba_path = getattr(settings, "emba_path", "/opt/emba/emba")
     emba_home = getattr(settings, "emba_home", "/opt/emba")
 
@@ -80,7 +119,14 @@ async def run_emba(
 
     await notify(f"Starting EMBA scan on {ip} ({fw_path})")
 
-    log.info("emba_start", fw_path=fw_path, log_dir=log_dir, gpt_level=gpt_level)
+    log.info(
+        "emba_start",
+        fw_path=fw_path,
+        fw_path_for_emba=fw_path_for_emba,
+        log_dir=log_dir,
+        log_dir_for_emba=log_dir_for_emba,
+        gpt_level=gpt_level,
+    )
 
     env = os.environ.copy()
     env["GPT_OPTION"] = gpt_level
@@ -89,7 +135,7 @@ async def run_emba(
     env.setdefault("SUDO_UID", "0")
     env.setdefault("SUDO_GID", "0")
 
-    cmd = [emba_path, "-f", fw_path, "-l", log_dir, "-F", "-y"]
+    cmd = [emba_path, "-f", fw_path_for_emba, "-l", log_dir_for_emba, "-F", "-y"]
 
     # Check for profile availability and extend command if needed
     gpt_profile = pathlib.Path(emba_home) / "scan-profiles/default-scan-gpt.emba"
@@ -99,9 +145,9 @@ async def run_emba(
         cmd = [
             emba_path,
             "-f",
-            fw_path,
+            fw_path_for_emba,
             "-l",
-            log_dir,
+            log_dir_for_emba,
             "-p",
             "scan-profiles/default-scan-gpt.emba",
             "-F",
@@ -111,9 +157,9 @@ async def run_emba(
         cmd = [
             emba_path,
             "-f",
-            fw_path,
+            fw_path_for_emba,
             "-l",
-            log_dir,
+            log_dir_for_emba,
             "-p",
             "scan-profiles/default-scan.emba",
             "-F",
