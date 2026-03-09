@@ -38,7 +38,7 @@ Full-stack network discovery, asset inventory, and **firmware security analysis*
 | B     | EMBA scanner       | Static/dynamic firmware analysis (CVEs, crypto, etc.) |
 | C     | Ollama AI triage   | LLM reads EMBA findings → risk report + score (0-10)  |
 
-The firmware pipeline uses **Ollama** for local LLM inference (default model: `qwen3:4b`), making it fully air-gapped / edge-deployable — no cloud API keys needed.
+The firmware pipeline uses **Ollama** for local LLM inference (default model: `qwen3:4b`), making it fully air-gapped / edge-deployable — no cloud API keys needed. The stack supports both host Ollama and fully Dockerized Ollama.
 
 ## Tech Stack
 
@@ -63,7 +63,14 @@ The firmware pipeline uses **Ollama** for local LLM inference (default model: `q
 - NVIDIA driver ≥ 535 + [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 - AI triage runs in seconds with GPU offload
 
-The RTX 5060 (8 GB VRAM) handles Qwen3 4B comfortably at full speed. For larger models like Mistral 7B or Llama3 8B, it still runs well within the VRAM budget. If you run Ollama natively (recommended for GPU), the Docker containers reach it via `network_mode: host`. To use a containerised Ollama instead, uncomment the `ollama` service in `docker-compose.yml`.
+The RTX 5060 (8 GB VRAM) handles Qwen3 4B comfortably at full speed. For larger models like Mistral 7B or Llama3 8B, it still runs well within the VRAM budget.
+
+## Deployment Modes
+
+- **Fully Dockerized (current recommended):** run `db`, `redis`, `api`, `worker`, `frontend`, and `ollama` as containers.
+- **Hybrid mode:** run Ollama on host and keep the rest in Docker.
+
+Both modes work with the same backend config (`OLLAMA_URL=http://localhost:11434`) because `api`/`worker` use `network_mode: host`.
 
 ## Quick Start
 
@@ -72,6 +79,17 @@ The RTX 5060 (8 GB VRAM) handles Qwen3 4B comfortably at full speed. For larger 
 - Docker & Docker Compose v2+
 - NVIDIA Container Toolkit (optional, for GPU acceleration)
 - Network scanning requires `NET_RAW` / `NET_ADMIN` capabilities (handled by docker-compose)
+
+### 0. One-time host setup (EMBA path + helper script)
+
+Run this once to prepare EMBA and baseline dependencies:
+
+```bash
+chmod +x install_emba_ollama.sh
+./install_emba_ollama.sh
+```
+
+If you are using fully Dockerized Ollama, this still sets up EMBA correctly; Ollama runtime can then be provided by the `ollama` compose service.
 
 ### 1. Clone and configure
 
@@ -88,7 +106,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-This starts 5 services:
+This starts the core services:
 
 | Service    | Port  | Description                      |
 |-----------|-------|----------------------------------|
@@ -97,8 +115,11 @@ This starts 5 services:
 | `api`     | 8001  | FastAPI backend                  |
 | `worker`  | —     | Scan + firmware pipeline worker  |
 | `frontend`| 3000  | React SPA (nginx)                |
+| `ollama`  | 11434 | Local LLM service (when enabled) |
 
-Ollama runs natively on the host (install from [ollama.com](https://ollama.com)). The API and worker reach it at `localhost:11434` via `network_mode: host`.
+For fully Dockerized mode, enable the `ollama` service block in `docker-compose.yml` (and `ollama_data` volume if needed), then restart the stack.
+
+For hybrid mode, keep Ollama on host; the API and worker reach it at `localhost:11434` via `network_mode: host`.
 
 ### 3. Run database migrations
 
@@ -108,10 +129,18 @@ docker compose exec api alembic upgrade head
 
 ### 4. Pull the Ollama model
 
-If you don't already have a model:
+If using fully Dockerized Ollama:
 
 ```bash
-ollama pull qwen3:4b          # 2.5 GB, default — fast on RTX 5060
+docker compose exec ollama ollama pull qwen3:4b
+docker compose exec ollama ollama list
+```
+
+If using host Ollama:
+
+```bash
+ollama pull qwen3:4b
+ollama list
 ```
 
 Other recommended models:
@@ -153,17 +182,24 @@ This will:
 
 ## GPU Setup (NVIDIA)
 
-The recommended approach is to run **Ollama natively** on the host so it has direct GPU access:
+Fully Dockerized mode (with containerized Ollama):
+
+1. Install NVIDIA driver + NVIDIA Container Toolkit on host.
+2. Enable `ollama` service GPU reservation in `docker-compose.yml`.
+3. Restart and verify:
 
 ```bash
-# Install Ollama (auto-detects NVIDIA GPU)
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Verify GPU is detected
-ollama run qwen3:4b "Hello"    # should show GPU layers in logs
+docker compose up -d --build
+docker compose exec ollama ollama run qwen3:4b "Hello"
 ```
 
-Ollama automatically uses your NVIDIA GPU if the driver is installed. The RTX 5060 (8 GB VRAM) can run:
+Hybrid host mode is also supported:
+
+```bash
+ollama run qwen3:4b "Hello"
+```
+
+With a working NVIDIA stack, the RTX 5060 (8 GB VRAM) can run:
 
 | Model      | Params | VRAM Usage | Speed      |
 |------------|--------|------------|------------|
@@ -172,7 +208,7 @@ Ollama automatically uses your NVIDIA GPU if the driver is installed. The RTX 50
 | mistral    | 7B     | ~5 GB      | Fast       |
 | llama3     | 8B     | ~6 GB      | Fast       |
 
-**Alternative: Containerised Ollama** — If you prefer running Ollama in Docker, uncomment the `ollama` service block in `docker-compose.yml` and install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html).
+If you prefer CPU-only execution, the same commands work without GPU setup.
 
 ## Development
 
