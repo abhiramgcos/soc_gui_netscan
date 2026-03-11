@@ -128,10 +128,8 @@ async def run_emba(
             (
                 "export USER=root SUDO_USER=root SUDO_UID=0 SUDO_GID=0 HOME=/root; "
                 "if [ ! -x /emba/emba ]; then "
-                "rm -rf /emba/* /emba/.[!.]* /emba/..?* 2>/dev/null || true; "
-                "timeout 180 git clone --depth 1 https://github.com/e-m-b-a/emba.git /emba || "
-                "{ echo 'EMBA bootstrap clone failed' >&2; exit 127; }; "
-                "chmod +x /emba/emba; "
+                "echo 'EMBA binary missing at /emba/emba (check EMBA_HOST_PATH mount)' >&2; "
+                "exit 127; "
                 "fi; "
                 "cd /emba && "
                 f"./emba -f '{fw_path_for_emba}' -l '{log_dir_for_emba}' "

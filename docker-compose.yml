@@ -187,12 +187,16 @@ services:
     restart: unless-stopped
     entrypoint: ["/bin/bash", "-lc"]
     command: ["tail -f /dev/null"]
+    environment:
+      USER: root
+      SUDO_USER: root
     privileged: true
     cap_add:
       - SYS_ADMIN
       - SYS_MODULE
       - NET_ADMIN
     volumes:
+      - ${EMBA_HOST_PATH:-/var/home/abhiramgcos/emba}:/emba
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
       - /var/run/docker.sock:/var/run/docker.sock
