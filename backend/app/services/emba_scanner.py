@@ -151,9 +151,10 @@ async def run_emba(
 
     proc = None
     try:
+        process_cwd = None if use_emba_container else emba_home
         proc = await asyncio.create_subprocess_exec(
             *cmd,
-            cwd=emba_home,
+            cwd=process_cwd,
             env=env,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
