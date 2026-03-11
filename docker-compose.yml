@@ -185,6 +185,7 @@ services:
     image: embeddedanalyzer/emba:latest
     container_name: soc_emba
     restart: unless-stopped
+    init: true
     entrypoint: ["/bin/bash", "-lc"]
     command: ["tail -f /dev/null"]
     environment:
