@@ -118,6 +118,7 @@ async def run_emba(
         profile_args = ["-p", "scan-profiles/default-scan.emba"]
 
     if use_emba_container:
+        profile_arg_str = " ".join(profile_args)
         cmd = [
             "docker",
             "exec",
@@ -125,9 +126,15 @@ async def run_emba(
             "/bin/bash",
             "-lc",
             (
+                "if [ ! -x /emba/emba ]; then "
+                "rm -rf /emba/* /emba/.[!.]* /emba/..?* 2>/dev/null || true; "
+                "timeout 180 git clone --depth 1 https://github.com/e-m-b-a/emba.git /emba || "
+                "{ echo 'EMBA bootstrap clone failed' >&2; exit 127; }; "
+                "chmod +x /emba/emba; "
+                "fi; "
                 "cd /emba && "
                 f"./emba -f '{fw_path_for_emba}' -l '{log_dir_for_emba}' "
-                f"{' '.join(profile_args)} -F -y"
+                f"{profile_arg_str} -F -y"
             ),
         ]
     else:
