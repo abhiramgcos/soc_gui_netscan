@@ -12,6 +12,7 @@ import inspect
 import os
 import pathlib
 import re
+import shlex
 import shutil
 from typing import Awaitable, Callable
 
@@ -63,6 +64,8 @@ async def run_emba(
     emba_container_name = getattr(settings, "emba_container_name", "soc_emba")
     emba_profile = getattr(settings, "emba_profile", "quick-scan.emba")
     emba_fast_mode = str(getattr(settings, "emba_fast_mode", "1")).lower() in {"1", "true", "yes", "on"}
+    emba_modules_raw = getattr(settings, "emba_modules", "p05,s10,s20,s40")
+    emba_modules = [module.strip() for module in emba_modules_raw.split(",") if module.strip()]
 
     resolved_emba_path = pathlib.Path(emba_path)
     fallback_emba_path = pathlib.Path(emba_home) / "emba"
@@ -112,52 +115,73 @@ async def run_emba(
     cmd = [emba_path, "-f", fw_path_for_emba, "-l", log_dir_for_emba, "-F", "-y"]
 
     # Check for profile availability and extend command if needed
-    profile_candidates = [
-        emba_profile,
-        "quick-scan.emba",
-        "default-scan.emba",
-        "default-scan-gpt.emba" if gpt_level != "0" else "default-scan.emba",
-    ]
+    profile_candidates = [emba_profile, "quick-scan.emba", "default-scan.emba"]
     selected_profile = ""
     profile_args: list[str] = []
-    for candidate in profile_candidates:
-        if not candidate:
-            continue
-        candidate_path = pathlib.Path(emba_home) / "scan-profiles" / candidate
-        if candidate_path.exists():
-            selected_profile = candidate
-            profile_args = ["-p", f"scan-profiles/{candidate}"]
-            break
+    if use_emba_container:
+        selected_profile = emba_profile
+    else:
+        for candidate in profile_candidates:
+            if not candidate:
+                continue
+            candidate_path = pathlib.Path(emba_home) / "scan-profiles" / candidate
+            if candidate_path.exists():
+                selected_profile = candidate
+                profile_args = ["-p", f"scan-profiles/{candidate}"]
+                break
+
+    module_args_list: list[str] = []
+    for module in emba_modules:
+        module_args_list.extend(["-m", module])
 
     if use_emba_container:
-        profile_arg_str = f"-p 'scan-profiles/{selected_profile}'" if selected_profile else ""
+        requested_profile = shlex.quote(emba_profile)
+        module_arg_str = " ".join(f"-m {shlex.quote(module)}" for module in emba_modules)
         fast_mode_arg = "-q" if emba_fast_mode else ""
+        emba_shell_cmd = (
+            "export USER=root SUDO_USER=root SUDO_UID=0 SUDO_GID=0 HOME=/root; "
+            "if [ ! -x /emba/external/binwalk/target/release/binwalk ] && [ -d /external ]; then "
+            "rm -rf /emba/external; ln -s /external /emba/external; "
+            "fi; "
+            "if [ -x /emba/external/emba_venv/bin/cve-bin-tool ]; then "
+            "export PATH=/emba/external/emba_venv/bin:$PATH; "
+            "fi; "
+            "if [ ! -x /emba/emba ]; then "
+            "echo 'EMBA binary missing at /emba/emba (check EMBA_HOST_PATH mount)' >&2; "
+            "exit 127; "
+            "fi; "
+            f"PROFILE={requested_profile}; "
+            "PROFILE_ARG=''; "
+            "for p in \"$PROFILE\" quick-scan.emba default-scan.emba; do "
+            "if [ -n \"$p\" ] && [ -f \"/emba/scan-profiles/$p\" ]; then PROFILE_ARG=\"-p scan-profiles/$p\"; break; fi; "
+            "done; "
+            "cd /emba && "
+            f"./emba -f '{fw_path_for_emba}' -l '{log_dir_for_emba}' "
+            f"$PROFILE_ARG {module_arg_str} {fast_mode_arg} -c -D -F -y"
+        )
         cmd = [
             "docker",
             "exec",
             emba_container_name,
             "/bin/bash",
             "-lc",
-            (
-                "export USER=root SUDO_USER=root SUDO_UID=0 SUDO_GID=0 HOME=/root; "
-                "if [ ! -x /emba/external/binwalk/target/release/binwalk ] && [ -d /external ]; then "
-                "rm -rf /emba/external; ln -s /external /emba/external; "
-                "fi; "
-                "if [ -x /emba/external/emba_venv/bin/cve-bin-tool ]; then "
-                "export PATH=/emba/external/emba_venv/bin:$PATH; "
-                "fi; "
-                "if [ ! -x /emba/emba ]; then "
-                "echo 'EMBA binary missing at /emba/emba (check EMBA_HOST_PATH mount)' >&2; "
-                "exit 127; "
-                "fi; "
-                "cd /emba && "
-                f"./emba -f '{fw_path_for_emba}' -l '{log_dir_for_emba}' "
-                f"{profile_arg_str} {fast_mode_arg} -D -F -y"
-            ),
+            emba_shell_cmd,
         ]
     else:
         fast_mode_args = ["-q"] if emba_fast_mode else []
-        cmd = [emba_path, "-f", fw_path_for_emba, "-l", log_dir_for_emba, *profile_args, *fast_mode_args, "-F", "-y"]
+        cmd = [
+            emba_path,
+            "-f",
+            fw_path_for_emba,
+            "-l",
+            log_dir_for_emba,
+            *profile_args,
+            *module_args_list,
+            *fast_mode_args,
+            "-c",
+            "-F",
+            "-y",
+        ]
 
     await notify(f"EMBA running on {ip} (timeout: {effective_timeout}s)")
 
@@ -214,6 +238,27 @@ async def run_emba(
         log.error("emba_timeout", timeout=effective_timeout)
         if proc and proc.returncode is None:
             proc.kill()
+        if use_emba_container:
+            cleanup_cmd = [
+                "docker",
+                "exec",
+                emba_container_name,
+                "/bin/bash",
+                "-lc",
+                (
+                    f"pkill -f {shlex.quote(log_dir_for_emba)} || true; "
+                    f"pkill -f {shlex.quote(fw_path_for_emba)} || true"
+                ),
+            ]
+            try:
+                cleanup_proc = await asyncio.create_subprocess_exec(
+                    *cleanup_cmd,
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.DEVNULL,
+                )
+                await asyncio.wait_for(cleanup_proc.wait(), timeout=10)
+            except Exception:
+                log.warning("emba_timeout_cleanup_failed", log_dir=log_dir_for_emba)
         await notify(f"EMBA scan timed out after {effective_timeout}s")
         raise
 

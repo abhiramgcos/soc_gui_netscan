@@ -11,9 +11,10 @@ from __future__ import annotations
 import asyncio
 import glob
 import inspect
+import json
 import pathlib
 import re
-from typing import Awaitable, Callable
+from typing import Any, Awaitable, Callable
 
 import httpx
 
@@ -29,6 +30,35 @@ SIGNALS = [
     "weak", "private key", "telnet", "default", "root:",
     "overflow", "injection", "unauthenticated", "cleartext",
     "insecure", "vulnerability", "exploit",
+]
+
+
+SEVERITY_KEYWORDS: list[tuple[str, str]] = [
+    ("critical", "critical"),
+    ("high", "high"),
+    ("medium", "medium"),
+    ("low", "low"),
+    ("cve-", "high"),
+    ("cwe-", "high"),
+    ("hardcoded", "high"),
+    ("credential", "high"),
+    ("password", "high"),
+    ("unauthenticated", "critical"),
+]
+
+
+CATEGORY_KEYWORDS: list[tuple[str, str]] = [
+    ("auth", "authentication"),
+    ("password", "authentication"),
+    ("credential", "authentication"),
+    ("cve-", "vulnerability"),
+    ("cwe-", "code-quality"),
+    ("injection", "injection"),
+    ("overflow", "memory-safety"),
+    ("telnet", "network-exposure"),
+    ("default", "misconfiguration"),
+    ("private key", "secret-management"),
+    ("insecure", "misconfiguration"),
 ]
 
 
@@ -66,37 +96,165 @@ def extract_findings(log_dir: str, max_lines: int = 120) -> list[str]:
 
 
 def _build_prompt(
-    findings: list[str],
+    compact_json: str,
+) -> str:
+    """Build the analysis prompt for the LLM."""
+    return f"""You are a firmware security analyst.
+
+You receive compact JSON with:
+1) Device context
+2) SBOM summary
+3) Security findings
+
+Task:
+- Produce a vendor-facing security report
+- Sections: Overview, Key Risks, Detailed Findings, Recommended Fixes, Supply Chain Risks
+- Avoid duplicate findings and keep concise
+- Use only evidence present in input
+- Provide overall risk score out of 10
+
+Output clean Markdown and start with:
+## Risk Score: X/10
+
+JSON input:
+<JSON>
+{compact_json}
+</JSON>
+"""
+
+
+def _extract_cwe(text: str) -> str:
+    match = re.search(r"\bCWE-\d+\b", text, re.IGNORECASE)
+    return match.group(0).upper() if match else "N/A"
+
+
+def _extract_cves(text: str) -> list[str]:
+    return sorted({m.upper() for m in re.findall(r"\bCVE-\d{4}-\d{4,7}\b", text, re.IGNORECASE)})
+
+
+def _infer_severity(text: str) -> str:
+    lowered = text.lower()
+    for needle, severity in SEVERITY_KEYWORDS:
+        if needle in lowered:
+            return severity
+    return "medium"
+
+
+def _infer_category(text: str) -> str:
+    lowered = text.lower()
+    for needle, category in CATEGORY_KEYWORDS:
+        if needle in lowered:
+            return category
+    return "general"
+
+
+def _extract_path(text: str) -> str:
+    path_match = re.search(r"(/[^\s:;,]+)", text)
+    return path_match.group(1) if path_match else "N/A"
+
+
+def _extract_component(text: str) -> str:
+    module_match = re.match(r"^([A-Za-z]\d{2,3}_[A-Za-z0-9_]+)", text)
+    if module_match:
+        return module_match.group(1)
+    cve_match = re.search(r"\bCVE-\d{4}-\d{4,7}\b", text, re.IGNORECASE)
+    if cve_match:
+        return "CVE finding"
+    return "firmware"
+
+
+def _extract_fw_grep_lines(log_dir: str) -> list[str]:
+    grep_log = pathlib.Path(log_dir) / "fw_grep.log"
+    if not grep_log.exists():
+        return []
+
+    lines: list[str] = []
+    with grep_log.open(errors="ignore") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if len(stripped) < 10:
+                continue
+            if any(s.lower() in stripped.lower() for s in SIGNALS):
+                lines.append(stripped)
+    return lines
+
+
+def _extract_sbom(log_dir: str, limit: int = 80) -> list[dict[str, Any]]:
+    sbom_file = pathlib.Path(log_dir) / "s08_main_package_sbom.txt"
+    if not sbom_file.exists():
+        return []
+
+    packages: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    with sbom_file.open(errors="ignore") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if not stripped or stripped.startswith("["):
+                continue
+            match = re.search(r"\b([A-Za-z0-9+_.-]{2,})\s+([0-9][A-Za-z0-9._:+~-]{1,})\b", stripped)
+            if not match:
+                continue
+            name, version = match.group(1), match.group(2)
+            key = (name, version)
+            if key in seen:
+                continue
+            seen.add(key)
+            packages.append({"name": name, "version": version, "cves": []})
+            if len(packages) >= limit:
+                break
+    return packages
+
+
+def build_compact_findings_payload(
+    log_dir: str,
     ip: str,
     vendor: str,
     ports: str,
     mac: str,
-) -> str:
-    """Build the analysis prompt for the LLM."""
-    context = f"""
-Device: {vendor or 'Unknown'} at IP {ip} (MAC: {mac})
-Open ports: {ports or 'Unknown'}
+    *,
+    max_findings: int,
+) -> dict[str, Any]:
+    raw_lines = _extract_fw_grep_lines(log_dir) or extract_findings(log_dir, max_lines=max_findings * 2)
 
-EMBA Firmware Findings ({len(findings)} items):
-{chr(10).join(f'- {f}' for f in findings)}
-"""
-    return f"""You are an IoT firmware security analyst. Analyse the findings below and:
+    dedup: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for line in raw_lines:
+        cwe = _extract_cwe(line)
+        category = _infer_category(line)
+        component = _extract_component(line)
+        severity = _infer_severity(line)
+        summary = line[:220]
+        key = (component, cwe, summary.lower())
+        if key in dedup:
+            continue
+        dedup[key] = {
+            "severity": severity,
+            "category": category,
+            "cwe": cwe,
+            "component": component,
+            "file_path": _extract_path(line),
+            "summary": summary,
+            "evidence": line[:320],
+            "cves": _extract_cves(line),
+        }
+        if len(dedup) >= max_findings:
+            break
 
-1. Group by severity: Critical / High / Medium / Low
-2. For Critical and High: explain root cause, realistic attack vector,
-   and a concrete mitigation step (1-2 sentences each)
-3. List any CVE IDs found and their CVSS scores if known
-4. Give an overall risk score out of 10 with a one-line justification
-5. Provide a brief executive summary (2-3 sentences) at the top
+    findings = list(dedup.values())
+    findings.sort(key=lambda item: {"critical": 0, "high": 1, "medium": 2, "low": 3}.get(item["severity"], 9))
 
-{context}
-
-Output clean Markdown with headers per severity group.
-Start with: ## Risk Score: X/10
-Then: ## Executive Summary
-Then severity groups: ## Critical, ## High, ## Medium, ## Low
-End with: ## CVE Summary (table of CVE IDs found)
-"""
+    payload = {
+        "device": {
+            "vendor": vendor or "Unknown",
+            "model": "Unknown",
+            "firmware_version": "N/A",
+            "ip": ip,
+            "mac": mac,
+            "ports": ports or "Unknown",
+        },
+        "sbom": _extract_sbom(log_dir),
+        "findings": findings,
+    }
+    return payload
 
 
 def _parse_risk_score(report: str) -> float | None:
@@ -170,7 +328,7 @@ def _build_fallback_report(
 
 
 async def ai_triage_ollama(
-    findings: list[str],
+    compact_payload: dict[str, Any],
     ip: str,
     vendor: str,
     ports: str,
@@ -185,7 +343,8 @@ async def ai_triage_ollama(
     ollama_url = getattr(settings, "ollama_url", "http://ollama:11434")
     ollama_model = getattr(settings, "ollama_model", "mistral")
 
-    prompt = _build_prompt(findings, ip, vendor, ports, mac)
+    compact_json = json.dumps(compact_payload, ensure_ascii=False, indent=2)
+    prompt = _build_prompt(compact_json)
 
     async def notify(message: str):
         if not on_progress:
@@ -194,9 +353,10 @@ async def ai_triage_ollama(
         if inspect.isawaitable(maybe_awaitable):
             await maybe_awaitable
 
-    await notify(f"Sending {len(findings)} findings to AI ({ollama_model}) for triage")
+    findings_count = len(compact_payload.get("findings", []))
+    await notify(f"Sending {findings_count} compact findings to AI ({ollama_model}) for triage")
 
-    log.info("ai_triage_start", model=ollama_model, findings=len(findings))
+    log.info("ai_triage_start", model=ollama_model, findings=findings_count)
 
     report = ""
     attempts = [4096, 2048, 1024]
@@ -241,8 +401,9 @@ async def ai_triage_ollama(
 
     if not report:
         await notify("Ollama returned empty responses; using fallback triage report")
-        log.warning("ai_triage_fallback_used", model=ollama_model, findings=len(findings))
-        return _build_fallback_report(findings, ip, vendor, ports, mac)
+        raw_fallback_findings = [item.get("summary", "") for item in compact_payload.get("findings", [])]
+        log.warning("ai_triage_fallback_used", model=ollama_model, findings=len(raw_fallback_findings))
+        return _build_fallback_report(raw_fallback_findings, ip, vendor, ports, mac)
 
     risk_score = _parse_risk_score(report)
     critical_count, high_count = _count_severity(report)
@@ -282,9 +443,18 @@ async def run_triage(
         if inspect.isawaitable(maybe_awaitable):
             await maybe_awaitable
 
-    findings = extract_findings(emba_log_dir)
+    max_findings = int(getattr(settings, "triage_max_findings", 120))
+    compact_payload = build_compact_findings_payload(
+        emba_log_dir,
+        ip,
+        vendor,
+        ports,
+        mac,
+        max_findings=max_findings,
+    )
+    findings_count = len(compact_payload.get("findings", []))
 
-    if not findings:
+    if not findings_count:
         no_findings_report = (
             "## Risk Score: N/A\n\n"
             "## Executive Summary\n\n"
@@ -296,8 +466,11 @@ async def run_triage(
         )
         return no_findings_report, None, 0, 0, 0
 
+    compact_json_path = pathlib.Path(emba_log_dir) / "findings_compact.json"
+    compact_json_path.write_text(json.dumps(compact_payload, ensure_ascii=False, indent=2))
+
     report, risk_score, critical_count, high_count = await ai_triage_ollama(
-        findings, ip, vendor, ports, mac, on_progress=on_progress,
+        compact_payload, ip, vendor, ports, mac, on_progress=on_progress,
     )
 
     # Save report as Markdown file alongside EMBA logs
@@ -310,4 +483,4 @@ async def run_triage(
         if inspect.isawaitable(maybe_awaitable):
             await maybe_awaitable
 
-    return report, risk_score, len(findings), critical_count, high_count
+    return report, risk_score, findings_count, critical_count, high_count

@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     emba_gpt_level: str = "1"                    # 1=scripts/configs, 2=+binary
     emba_profile: str = "quick-scan.emba"
     emba_fast_mode: str = "1"
+    emba_modules: str = "p05,s10,s20,s40"
+    triage_max_findings: int = 120
     emba_container_name: str = "soc_emba"
     firmware_dir: str = "/app/firmware"
     emba_logs_dir: str = "/app/emba_logs"
