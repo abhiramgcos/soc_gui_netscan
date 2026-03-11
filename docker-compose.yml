@@ -43,8 +43,10 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
       EMBA_PATH: ${EMBA_PATH:-/opt/emba/emba}
       EMBA_HOME: /opt/emba
-      EMBA_TIMEOUT: ${EMBA_TIMEOUT:-7200}
+      EMBA_TIMEOUT: ${EMBA_TIMEOUT:-1800}
       EMBA_GPT_LEVEL: ${EMBA_GPT_LEVEL:-1}
+      EMBA_PROFILE: ${EMBA_PROFILE:-quick-scan.emba}
+      EMBA_FAST_MODE: ${EMBA_FAST_MODE:-1}
       SCAN_INTERFACE: ${SCAN_INTERFACE:-eth0}
       EMBA_CONTAINER_NAME: ${EMBA_CONTAINER_NAME:-soc_emba}
     ports:
@@ -98,8 +100,10 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
       EMBA_PATH: ${EMBA_PATH:-/opt/emba/emba}
       EMBA_HOME: /opt/emba
-      EMBA_TIMEOUT: ${EMBA_TIMEOUT:-7200}
+      EMBA_TIMEOUT: ${EMBA_TIMEOUT:-1800}
       EMBA_GPT_LEVEL: ${EMBA_GPT_LEVEL:-1}
+      EMBA_PROFILE: ${EMBA_PROFILE:-quick-scan.emba}
+      EMBA_FAST_MODE: ${EMBA_FAST_MODE:-1}
       SCAN_INTERFACE: ${SCAN_INTERFACE:-eth0}
       EMBA_CONTAINER_NAME: ${EMBA_CONTAINER_NAME:-soc_emba}
     volumes:

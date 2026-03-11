@@ -33,7 +33,7 @@ async def run_emba(
     *,
     gpt_level: str = "1",
     on_progress: Callable[[str], Awaitable[None] | None] | None = None,
-    timeout: int = 7200,  # 2 hours max
+    timeout: int | None = None,
 ) -> str:
     """
     Run EMBA against *fw_path* and return the log directory path.
@@ -53,12 +53,16 @@ async def run_emba(
         RuntimeError: If EMBA exits with a non-zero return code.
         asyncio.TimeoutError: If EMBA exceeds the timeout.
     """
+    effective_timeout = int(timeout if timeout is not None else getattr(settings, "emba_timeout", 1800))
+
     log_dir = str(EMBA_LOGS / f"device_{device_id}_{ip.replace('.', '_')}")
     fw_path_for_emba = str(pathlib.Path(fw_path))
     log_dir_for_emba = str(pathlib.Path(log_dir))
     emba_path = getattr(settings, "emba_path", "/opt/emba/emba")
     emba_home = getattr(settings, "emba_home", "/opt/emba")
     emba_container_name = getattr(settings, "emba_container_name", "soc_emba")
+    emba_profile = getattr(settings, "emba_profile", "quick-scan.emba")
+    emba_fast_mode = str(getattr(settings, "emba_fast_mode", "1")).lower() in {"1", "true", "yes", "on"}
 
     resolved_emba_path = pathlib.Path(emba_path)
     fallback_emba_path = pathlib.Path(emba_home) / "emba"
@@ -108,17 +112,26 @@ async def run_emba(
     cmd = [emba_path, "-f", fw_path_for_emba, "-l", log_dir_for_emba, "-F", "-y"]
 
     # Check for profile availability and extend command if needed
-    gpt_profile = pathlib.Path(emba_home) / "scan-profiles/default-scan-gpt.emba"
-    default_profile = pathlib.Path(emba_home) / "scan-profiles/default-scan.emba"
-
+    profile_candidates = [
+        emba_profile,
+        "quick-scan.emba",
+        "default-scan.emba",
+        "default-scan-gpt.emba" if gpt_level != "0" else "default-scan.emba",
+    ]
+    selected_profile = ""
     profile_args: list[str] = []
-    if gpt_profile.exists():
-        profile_args = ["-p", "scan-profiles/default-scan-gpt.emba"]
-    elif default_profile.exists():
-        profile_args = ["-p", "scan-profiles/default-scan.emba"]
+    for candidate in profile_candidates:
+        if not candidate:
+            continue
+        candidate_path = pathlib.Path(emba_home) / "scan-profiles" / candidate
+        if candidate_path.exists():
+            selected_profile = candidate
+            profile_args = ["-p", f"scan-profiles/{candidate}"]
+            break
 
     if use_emba_container:
-        profile_arg_str = " ".join(profile_args)
+        profile_arg_str = f"-p 'scan-profiles/{selected_profile}'" if selected_profile else ""
+        fast_mode_arg = "-q" if emba_fast_mode else ""
         cmd = [
             "docker",
             "exec",
@@ -139,19 +152,23 @@ async def run_emba(
                 "fi; "
                 "cd /emba && "
                 f"./emba -f '{fw_path_for_emba}' -l '{log_dir_for_emba}' "
-                f"{profile_arg_str} -D -F -y"
+                f"{profile_arg_str} {fast_mode_arg} -D -F -y"
             ),
         ]
     else:
-        cmd = [emba_path, "-f", fw_path_for_emba, "-l", log_dir_for_emba, *profile_args, "-F", "-y"]
+        fast_mode_args = ["-q"] if emba_fast_mode else []
+        cmd = [emba_path, "-f", fw_path_for_emba, "-l", log_dir_for_emba, *profile_args, *fast_mode_args, "-F", "-y"]
 
-    await notify(f"EMBA running on {ip} (timeout: {timeout}s)")
+    await notify(f"EMBA running on {ip} (timeout: {effective_timeout}s)")
 
     async def stream_output(stream: asyncio.StreamReader | None, prefix: str):
         if stream is None:
             return
         while True:
-            line = await stream.readline()
+            try:
+                line = await stream.readline()
+            except ValueError:
+                line = await stream.read(4096)
             if not line:
                 break
             text = line.decode(errors="replace").strip()
@@ -175,7 +192,7 @@ async def run_emba(
         stdout_task = asyncio.create_task(stream_output(proc.stdout, "[EMBA]"))
         stderr_task = asyncio.create_task(stream_output(proc.stderr, "[EMBA-ERR]"))
 
-        await asyncio.wait_for(proc.wait(), timeout=timeout)
+        await asyncio.wait_for(proc.wait(), timeout=effective_timeout)
         await asyncio.gather(stdout_task, stderr_task)
 
         stderr_tail = ""
@@ -194,10 +211,10 @@ async def run_emba(
         await notify(f"EMBA scan completed for {ip}")
 
     except asyncio.TimeoutError:
-        log.error("emba_timeout", timeout=timeout)
+        log.error("emba_timeout", timeout=effective_timeout)
         if proc and proc.returncode is None:
             proc.kill()
-        await notify(f"EMBA scan timed out after {timeout}s")
+        await notify(f"EMBA scan timed out after {effective_timeout}s")
         raise
 
     return log_dir

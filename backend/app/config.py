@@ -35,8 +35,10 @@ class Settings(BaseSettings):
     # ── Firmware Analysis ───────────────────────
     emba_path: str = "/opt/emba/emba"
     emba_home: str = "/opt/emba"
-    emba_timeout: int = 7200                     # 2 hours max per device
+    emba_timeout: int = 1800                     # 30 minutes max per device
     emba_gpt_level: str = "1"                    # 1=scripts/configs, 2=+binary
+    emba_profile: str = "quick-scan.emba"
+    emba_fast_mode: str = "1"
     emba_container_name: str = "soc_emba"
     firmware_dir: str = "/app/firmware"
     emba_logs_dir: str = "/app/emba_logs"
