@@ -106,7 +106,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-This starts the core services:
+This starts all core services with `restart: unless-stopped`:
 
 | Service    | Port  | Description                      |
 |-----------|-------|----------------------------------|
@@ -115,55 +115,50 @@ This starts the core services:
 | `api`     | 8001  | FastAPI backend                  |
 | `worker`  | —     | Scan + firmware pipeline worker  |
 | `frontend`| 3000  | React SPA (nginx)                |
-| `ollama`  | 11434 | Local LLM service (when enabled) |
-
-For fully Dockerized mode, enable the `ollama` service block in `docker-compose.yml` (and `ollama_data` volume if needed), then restart the stack.
-
-For hybrid mode, keep Ollama on host; the API and worker reach it at `localhost:11434` via `network_mode: host`.
+| `ollama`  | 11435 | Local LLM service (container `11434`) |
+| `emba`    | —     | EMBA runtime container           |
 
 ### 3. Run database migrations
 
 ```bash
-docker compose exec api alembic upgrade head
+docker compose exec -T api alembic upgrade head
 ```
 
-### 4. Pull the Ollama model
-
-If using fully Dockerized Ollama:
+### 4. Pull Ollama model (required for AI triage)
 
 ```bash
-docker compose exec ollama ollama pull qwen3:4b
-docker compose exec ollama ollama list
+docker compose exec -T ollama ollama pull qwen3:4b
+docker compose exec -T ollama ollama list
 ```
 
-If using host Ollama:
+### 5. Verify stack health
 
 ```bash
-ollama pull qwen3:4b
-ollama list
+docker compose ps
+curl -fsS http://localhost:8001/health
+curl -fsS http://localhost:3000 >/dev/null && echo frontend_ok
+curl -fsS http://localhost:11435/api/tags >/dev/null && echo ollama_ok
 ```
 
-Other recommended models:
+### 6. (Optional) Seed initial data
 
 ```bash
-ollama pull mistral           # 7B params, ~4.1 GB
-ollama pull llama3            # 8B params
-ollama pull phi3:mini         # 3.8B, smallest/fastest
+docker compose exec -T api python -m seed_data
 ```
 
-Then set `OLLAMA_MODEL=mistral` (etc.) in `.env` or `docker-compose.yml`.
-
-### 5. Seed initial data (optional)
-
-```bash
-docker compose exec api python -m seed_data
-```
-
-### 6. Open the dashboard
+### 7. Open the dashboard
 
 Navigate to [http://localhost:3000](http://localhost:3000)
 
 Interactive API docs: [http://localhost:8001/api/docs](http://localhost:8001/api/docs)
+
+### Start / stop behavior
+
+- Stop all services: `docker compose down`
+- Start again: `docker compose up -d`
+- Services auto-restart on daemon/host restart unless manually stopped (`restart: unless-stopped`).
+
+To use another model, set `OLLAMA_MODEL` in `.env` and pull it in the Ollama container.
 
 ## Update Containers and Tools
 

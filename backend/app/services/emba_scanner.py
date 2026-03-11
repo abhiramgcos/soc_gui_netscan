@@ -127,6 +127,12 @@ async def run_emba(
             "-lc",
             (
                 "export USER=root SUDO_USER=root SUDO_UID=0 SUDO_GID=0 HOME=/root; "
+                "if [ ! -x /emba/external/binwalk/target/release/binwalk ] && [ -d /external ]; then "
+                "rm -rf /emba/external; ln -s /external /emba/external; "
+                "fi; "
+                "if [ -x /emba/external/emba_venv/bin/cve-bin-tool ]; then "
+                "export PATH=/emba/external/emba_venv/bin:$PATH; "
+                "fi; "
                 "if [ ! -x /emba/emba ]; then "
                 "echo 'EMBA binary missing at /emba/emba (check EMBA_HOST_PATH mount)' >&2; "
                 "exit 127; "
