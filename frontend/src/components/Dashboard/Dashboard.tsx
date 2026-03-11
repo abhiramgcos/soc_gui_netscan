@@ -12,6 +12,7 @@ import { dashboardApi } from '../../api/client';
 import { useFetch, usePolling } from '../../hooks/useData';
 import { formatRelative } from '../../utils/formatters';
 import type { DashboardStats } from '../../types';
+import DotDistortionShader from '../Shaders/DotDistortionShader';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -48,14 +49,17 @@ function Dashboard() {
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Network discovery overview and statistics</p>
+      <div className="dashboard-hero">
+        <DotDistortionShader className="dashboard-hero-shader" />
+        <div className="page-header dashboard-hero-content">
+          <div>
+            <h1 className="page-title">Dashboard</h1>
+            <p className="page-subtitle">Network discovery overview and statistics</p>
+          </div>
+          <button className="btn btn-primary" onClick={() => navigate('/scans')}>
+            <Radar size={16} /> New Scan
+          </button>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/scans')}>
-          <Radar size={16} /> New Scan
-        </button>
       </div>
 
       {/* ── Stats Grid ─────────────────── */}
