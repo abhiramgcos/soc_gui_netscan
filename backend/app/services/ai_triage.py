@@ -182,7 +182,7 @@ async def ai_triage_ollama(
     Send findings to Ollama for AI triage and return
     (report_markdown, risk_score, critical_count, high_count).
     """
-    ollama_url = getattr(settings, "ollama_url", "http://localhost:11434")
+    ollama_url = getattr(settings, "ollama_url", "http://ollama:11434")
     ollama_model = getattr(settings, "ollama_model", "mistral")
 
     prompt = _build_prompt(findings, ip, vendor, ports, mac)

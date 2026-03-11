@@ -9,13 +9,13 @@ class Settings(BaseSettings):
     """Central configuration — values sourced from env / .env file."""
 
     # ── Database ────────────────────────────────
-    database_url: str = "postgresql+asyncpg://soc_admin:changeme_in_production@localhost:5432/soc_network"
-    database_url_sync: str = "postgresql://soc_admin:changeme_in_production@localhost:5432/soc_network"
+    database_url: str = "postgresql+asyncpg://soc_admin:changeme_in_production@db:5432/soc_network"
+    database_url_sync: str = "postgresql://soc_admin:changeme_in_production@db:5432/soc_network"
     db_pool_size: int = 20
     db_max_overflow: int = 10
 
     # ── Redis ───────────────────────────────────
-    redis_url: str = "redis://localhost:6379/0"
+    redis_url: str = "redis://redis:6379/0"
 
     # ── API ─────────────────────────────────────
     api_prefix: str = "/api"
@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     rustscan_batch_size: int = 3000           # parallel connections
     max_concurrent_scans: int = 4
     worker_concurrency: int = 4
+    scan_interface: str = "eth0"
 
     # ── Firmware Analysis ───────────────────────
     emba_path: str = "/opt/emba/emba"
@@ -40,7 +41,7 @@ class Settings(BaseSettings):
     emba_logs_dir: str = "/app/emba_logs"
 
     # ── Ollama (local LLM for AI triage) ────────
-    ollama_url: str = "http://localhost:11434"
+    ollama_url: str = "http://ollama:11434"
     ollama_model: str = "qwen3:4b"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "case_sensitive": False}

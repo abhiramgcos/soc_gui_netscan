@@ -1,7 +1,8 @@
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
 # ── System deps for nmap, rustscan, arp-scan ────
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     nmap \
     arp-scan \
     net-tools \
@@ -24,9 +25,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     grep \
     gawk \
     git \
-    docker-cli \
-    docker.io \
-    docker-compose \
     kmod \
     procps \
     psmisc \
@@ -34,8 +32,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libnotify-bin \
     python3 \
     python-is-python3 \
-    && if [ -x /usr/bin/docker-cli ] && [ ! -x /usr/bin/docker ]; then ln -s /usr/bin/docker-cli /usr/bin/docker; fi \
     && rm -rf /var/lib/apt/lists/*
+
+# ── Install EMBA into image ───────────────────
+ARG EMBA_GIT_REF=master
+ENV EMBA_HOME=/opt/emba
+ENV EMBA_PATH=/opt/emba/emba
+ENV USER=root
+ENV SUDO_USER=root
+ENV LOGNAME=root
+RUN git clone --depth 1 --branch ${EMBA_GIT_REF} https://github.com/e-m-b-a/emba.git /opt/emba \
+        && if [ ! -f /etc/apt/sources.list ]; then \
+                 printf "deb http://deb.debian.org/debian bookworm main\n" > /etc/apt/sources.list; \
+                 printf "deb http://deb.debian.org/debian bookworm-updates main\n" >> /etc/apt/sources.list; \
+                 printf "deb http://deb.debian.org/debian-security bookworm-security main\n" >> /etc/apt/sources.list; \
+             fi \
+    && chmod +x /opt/emba/installer.sh /opt/emba/emba \
+    && cd /opt/emba \
+    && SUDO_USER=root USER=root LOGNAME=root HOME=/root yes | ./installer.sh -s -D
 
 # ── Install RustScan ────────────────────────────
 COPY rustscan.deb /tmp/rustscan.deb

@@ -243,7 +243,8 @@ async def _arp_lookup_single(host: DiscoveredHost, semaphore: asyncio.Semaphore,
     async with semaphore:
         # Try arp-scan first
         arp_scan = _find_binary("arp-scan")
-        cmd = ["sudo", arp_scan, "-I", "eth0", "-q", host.ip]
+        scan_interface = getattr(settings, "scan_interface", "eth0")
+        cmd = ["sudo", arp_scan, "-I", scan_interface, "-q", host.ip]
         stdout, stderr, rc = await _run_cmd(cmd, timeout)
 
         if rc == 0 and stdout.strip():
