@@ -12,6 +12,7 @@ import inspect
 import os
 import pathlib
 import re
+import shutil
 from typing import Awaitable, Callable
 
 from app.config import settings
@@ -57,21 +58,27 @@ async def run_emba(
     log_dir_for_emba = str(pathlib.Path(log_dir))
     emba_path = getattr(settings, "emba_path", "/opt/emba/emba")
     emba_home = getattr(settings, "emba_home", "/opt/emba")
+    emba_container_name = getattr(settings, "emba_container_name", "soc_emba")
 
     resolved_emba_path = pathlib.Path(emba_path)
     fallback_emba_path = pathlib.Path(emba_home) / "emba"
+    use_emba_container = False
     if not (resolved_emba_path.exists() and os.access(resolved_emba_path, os.X_OK)):
         if fallback_emba_path.exists() and os.access(fallback_emba_path, os.X_OK):
             resolved_emba_path = fallback_emba_path
             emba_path = str(resolved_emba_path)
         else:
-            message = (
-                "EMBA binary not found or not executable. "
-                f"Checked EMBA_PATH='{emba_path}' and fallback '{fallback_emba_path}'. "
-                "Ensure the backend image includes EMBA under /opt/emba and rebuild containers."
-            )
-            log.error("emba_binary_missing", emba_path=emba_path, emba_home=emba_home)
-            raise RuntimeError(message)
+            docker_bin = shutil.which("docker")
+            if docker_bin:
+                use_emba_container = True
+            else:
+                message = (
+                    "EMBA binary not found and docker CLI unavailable. "
+                    f"Checked EMBA_PATH='{emba_path}' and fallback '{fallback_emba_path}'. "
+                    "Ensure EMBA is available locally or provide docker socket + EMBA container."
+                )
+                log.error("emba_runtime_missing", emba_path=emba_path, emba_home=emba_home)
+                raise RuntimeError(message)
 
     async def notify(message: str):
         if not on_progress:
@@ -104,30 +111,27 @@ async def run_emba(
     gpt_profile = pathlib.Path(emba_home) / "scan-profiles/default-scan-gpt.emba"
     default_profile = pathlib.Path(emba_home) / "scan-profiles/default-scan.emba"
 
+    profile_args: list[str] = []
     if gpt_profile.exists():
-        cmd = [
-            emba_path,
-            "-f",
-            fw_path_for_emba,
-            "-l",
-            log_dir_for_emba,
-            "-p",
-            "scan-profiles/default-scan-gpt.emba",
-            "-F",
-            "-y",
-        ]
+        profile_args = ["-p", "scan-profiles/default-scan-gpt.emba"]
     elif default_profile.exists():
+        profile_args = ["-p", "scan-profiles/default-scan.emba"]
+
+    if use_emba_container:
         cmd = [
-            emba_path,
-            "-f",
-            fw_path_for_emba,
-            "-l",
-            log_dir_for_emba,
-            "-p",
-            "scan-profiles/default-scan.emba",
-            "-F",
-            "-y",
+            "docker",
+            "exec",
+            emba_container_name,
+            "/bin/bash",
+            "-lc",
+            (
+                "cd /emba && "
+                f"./emba -f '{fw_path_for_emba}' -l '{log_dir_for_emba}' "
+                f"{' '.join(profile_args)} -F -y"
+            ),
         ]
+    else:
+        cmd = [emba_path, "-f", fw_path_for_emba, "-l", log_dir_for_emba, *profile_args, "-F", "-y"]
 
     await notify(f"EMBA running on {ip} (timeout: {timeout}s)")
 

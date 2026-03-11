@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     emba_home: str = "/opt/emba"
     emba_timeout: int = 7200                     # 2 hours max per device
     emba_gpt_level: str = "1"                    # 1=scripts/configs, 2=+binary
+    emba_container_name: str = "soc_emba"
     firmware_dir: str = "/app/firmware"
     emba_logs_dir: str = "/app/emba_logs"
 

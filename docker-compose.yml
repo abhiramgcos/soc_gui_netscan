@@ -46,6 +46,7 @@ services:
       EMBA_TIMEOUT: ${EMBA_TIMEOUT:-7200}
       EMBA_GPT_LEVEL: ${EMBA_GPT_LEVEL:-1}
       SCAN_INTERFACE: ${SCAN_INTERFACE:-eth0}
+      EMBA_CONTAINER_NAME: ${EMBA_CONTAINER_NAME:-soc_emba}
     ports:
       - "${API_PORT:-8001}:8001"
     volumes:
@@ -61,6 +62,8 @@ services:
         condition: service_healthy
       ollama:
         condition: service_healthy
+      emba:
+        condition: service_started
     # Required for nmap SYN scans, ARP lookups, and RustScan
     cap_add:
       - NET_RAW
@@ -98,12 +101,14 @@ services:
       EMBA_TIMEOUT: ${EMBA_TIMEOUT:-7200}
       EMBA_GPT_LEVEL: ${EMBA_GPT_LEVEL:-1}
       SCAN_INTERFACE: ${SCAN_INTERFACE:-eth0}
+      EMBA_CONTAINER_NAME: ${EMBA_CONTAINER_NAME:-soc_emba}
     volumes:
       - ./backend:/app
       - ./db/devices:/app/db_devices
       - scan_results:/app/scan_results
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       db:
         condition: service_healthy
@@ -111,6 +116,8 @@ services:
         condition: service_healthy
       ollama:
         condition: service_healthy
+      emba:
+        condition: service_started
     # Required for nmap SYN scans, ARP lookups, and RustScan
     cap_add:
       - NET_RAW
@@ -151,7 +158,7 @@ services:
     container_name: soc_ollama
     restart: unless-stopped
     ports:
-      - "${OLLAMA_PORT:-11434}:11434"
+      - "${OLLAMA_PORT:-11435}:11434"
     volumes:
       - ollama_data:/root/.ollama
     # GPU acceleration (NVIDIA)
@@ -163,11 +170,26 @@ services:
               count: all
               capabilities: [gpu]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ["CMD", "ollama", "list"]
       interval: 15s
       timeout: 10s
       retries: 8
       start_period: 40s
+    networks:
+      - soc_net
+
+  # ──────────────────────────────────────────────
+  # EMBA Runtime Container
+  # ──────────────────────────────────────────────
+  emba:
+    image: embeddedanalyzer/emba:latest
+    container_name: soc_emba
+    restart: unless-stopped
+    entrypoint: ["/bin/bash", "-lc"]
+    command: ["tail -f /dev/null"]
+    volumes:
+      - firmware_data:/app/firmware
+      - emba_logs:/app/emba_logs
     networks:
       - soc_net
 
@@ -188,7 +210,7 @@ services:
     networks:
       - soc_net
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:80"]
+      test: ["CMD", "pidof", "nginx"]
       interval: 10s
       timeout: 5s
       retries: 5
