@@ -8,6 +8,7 @@ import {
   Activity,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import DotDistortionShader from '../Shaders/DotDistortionShader';
 
 interface Props {
   children: ReactNode;
@@ -96,6 +97,7 @@ function Layout({ children }: Props) {
 
       {/* ── Main Content ────────────────── */}
       <main className="app-main">
+        <DotDistortionShader className="app-background-shader" />
         <div className="app-content">{children}</div>
       </main>
     </div>

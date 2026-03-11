@@ -145,9 +145,18 @@ a:hover {
 
 .app-main {
   flex: 1;
+  position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.app-background-shader {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  color: rgba(59, 130, 246, 0.18);
 }
 
 .app-header {
@@ -163,6 +172,8 @@ a:hover {
 
 .app-content {
   flex: 1;
+  position: relative;
+  z-index: 1;
   overflow-y: auto;
   padding: var(--space-xl);
 }
@@ -662,30 +673,6 @@ a:hover {
   font-size: 13px;
   color: var(--text-muted);
   margin-top: 2px;
-}
-
-.dashboard-hero {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--space-xl);
-  background: linear-gradient(135deg, rgba(17, 26, 46, 0.85), rgba(12, 18, 32, 0.9));
-}
-
-.dashboard-hero-content {
-  position: relative;
-  z-index: 2;
-  margin-bottom: 0;
-  padding: var(--space-xl);
-}
-
-.dashboard-hero-shader {
-  position: absolute;
-  inset: 0;
-  color: rgba(59, 130, 246, 0.45);
-  z-index: 1;
-  pointer-events: none;
 }
 
 .dot-distortion-shader {
