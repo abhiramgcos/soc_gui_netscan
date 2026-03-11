@@ -133,7 +133,7 @@ async def run_emba(
                 "fi; "
                 "cd /emba && "
                 f"./emba -f '{fw_path_for_emba}' -l '{log_dir_for_emba}' "
-                f"{profile_arg_str} -F -y"
+                f"{profile_arg_str} -D -F -y"
             ),
         ]
     else:
