@@ -187,9 +187,16 @@ services:
     restart: unless-stopped
     entrypoint: ["/bin/bash", "-lc"]
     command: ["tail -f /dev/null"]
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - SYS_MODULE
+      - NET_ADMIN
     volumes:
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /lib/modules:/lib/modules:ro
     networks:
       - soc_net
 

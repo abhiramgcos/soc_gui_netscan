@@ -126,6 +126,7 @@ async def run_emba(
             "/bin/bash",
             "-lc",
             (
+                "export USER=root SUDO_USER=root SUDO_UID=0 SUDO_GID=0 HOME=/root; "
                 "if [ ! -x /emba/emba ]; then "
                 "rm -rf /emba/* /emba/.[!.]* /emba/..?* 2>/dev/null || true; "
                 "timeout 180 git clone --depth 1 https://github.com/e-m-b-a/emba.git /emba || "
