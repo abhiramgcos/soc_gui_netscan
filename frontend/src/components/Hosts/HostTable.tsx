@@ -151,7 +151,6 @@ function HostTable() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Status</th>
                     <th>IP Address</th>
                     <th>Hostname</th>
                     <th>MAC Address</th>
@@ -170,12 +169,6 @@ function HostTable() {
                       className="clickable-row"
                       onClick={() => navigate(`/hosts/${encodeURIComponent(host.mac_address)}`)}
                     >
-                      <td>
-                        <span className={`badge badge-${host.is_up ? 'open' : 'closed'}`}>
-                          <span className="badge-dot" />
-                          {host.is_up ? 'UP' : 'DOWN'}
-                        </span>
-                      </td>
                       <td className="mono">{host.ip_address}</td>
                       <td>{host.hostname || '—'}</td>
                       <td className="mono text-sm">{host.mac_address || '—'}</td>
