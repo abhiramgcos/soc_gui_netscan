@@ -3,6 +3,7 @@ FROM python:3.12-slim-bookworm
 # ── System deps for nmap, rustscan, arp-scan ────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    gnupg \
     nmap \
     arp-scan \
     net-tools \
@@ -25,7 +26,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     grep \
     gawk \
     git \
-    docker.io \
     kmod \
     procps \
     psmisc \
@@ -33,6 +33,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libnotify-bin \
     python3 \
     python-is-python3 \
+    && install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable" > /etc/apt/sources.list.d/docker.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends docker-ce-cli \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Install RustScan ────────────────────────────
