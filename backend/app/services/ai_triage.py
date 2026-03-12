@@ -17,6 +17,7 @@ import re
 from typing import Any, Awaitable, Callable
 
 import httpx
+import markdown as _md
 
 from app.config import settings
 from app.utils.logging import get_logger
@@ -335,6 +336,54 @@ def build_compact_findings_payload(
     return payload
 
 
+# ── Markdown → HTML normalisation ───────────────────────────────
+
+_MD_EXTENSIONS = ["tables", "fenced_code", "nl2br", "sane_lists"]
+
+
+def _looks_like_html(text: str) -> bool:
+    """Heuristic: does *text* already contain significant HTML tags?"""
+    html_tags = re.findall(r"<(?:h[1-6]|p|ul|ol|li|table|tr|th|td|div|span)\b", text, re.IGNORECASE)
+    return len(html_tags) >= 3
+
+
+def _ensure_html(report: str) -> str:
+    """
+    Small LLMs often ignore the "output HTML" instruction and return Markdown.
+    Detect that case and convert to HTML so the frontend can render consistently.
+    """
+    if not report:
+        return report
+
+    if _looks_like_html(report):
+        return report  # already HTML-ish
+
+    # Convert Markdown → HTML
+    html = _md.markdown(report, extensions=_MD_EXTENSIONS)
+
+    # Inject our CSS classes for severity badges
+    for sev in ("CRITICAL", "HIGH", "MEDIUM", "LOW"):
+        html = re.sub(
+            rf"\b({sev})\b",
+            rf'<span class="severity-{sev.lower()}">{sev}</span>',
+            html,
+        )
+
+    # Inject risk-score class on the first <h2> if it mentions risk score
+    html = re.sub(
+        r"<h2>(.*?[Rr]isk\s+[Ss]core.*?)</h2>",
+        r'<h2 class="risk-score">\1</h2>',
+        html,
+        count=1,
+    )
+
+    # Add report-table class to any tables
+    html = html.replace("<table>", '<table class="report-table">')
+
+    log.info("report_converted_md_to_html", original_len=len(report), html_len=len(html))
+    return html
+
+
 def _parse_risk_score(report: str) -> float | None:
     """Extract the numeric risk score from the AI report."""
     # Match patterns like "Risk Score: 7/10" or "risk score out of 10: 7"
@@ -457,6 +506,7 @@ async def ai_triage_ollama(
                     "model": ollama_model,
                     "prompt": prompt,
                     "stream": False,
+                    "think": False,          # Disable thinking mode for Qwen3-family models
                     "keep_alive": "10m",
                     "options": {
                         "temperature": 0.2,
@@ -468,6 +518,28 @@ async def ai_triage_ollama(
             data = resp.json()
             report = (data.get("response") or "").strip()
 
+            # Qwen3-family "thinking" models may return content in
+            # the 'thinking' field with an empty 'response'.  Fall
+            # back to that field, stripping <think>…</think> wrapper.
+            if not report:
+                thinking_raw = (data.get("thinking") or "").strip()
+                if thinking_raw:
+                    # Strip the <think>…</think> wrapper if present
+                    cleaned = re.sub(
+                        r"<think>\s*", "", thinking_raw, flags=re.DOTALL
+                    )
+                    cleaned = re.sub(
+                        r"\s*</think>", "", cleaned, flags=re.DOTALL
+                    ).strip()
+                    if cleaned:
+                        report = cleaned
+                        log.info(
+                            "ai_triage_used_thinking_field",
+                            model=ollama_model,
+                            thinking_len=len(thinking_raw),
+                            report_len=len(report),
+                        )
+
             if report:
                 break
 
@@ -476,6 +548,7 @@ async def ai_triage_ollama(
                 model=ollama_model,
                 attempt=attempt_idx,
                 response_keys=list(data.keys()) if isinstance(data, dict) else [],
+                has_thinking=bool(data.get("thinking")),
                 done=data.get("done") if isinstance(data, dict) else None,
                 done_reason=data.get("done_reason") if isinstance(data, dict) else None,
             )
@@ -489,8 +562,12 @@ async def ai_triage_ollama(
         log.warning("ai_triage_fallback_used", model=ollama_model, findings=len(raw_fallback_findings))
         return _build_fallback_report(raw_fallback_findings, ip, vendor, ports, mac)
 
+    # Parse scores from raw text (works on both MD and HTML)
     risk_score = _parse_risk_score(report)
     critical_count, high_count = _count_severity(report)
+
+    # Ensure report is HTML for consistent frontend rendering
+    report = _ensure_html(report)
 
     log.info(
         "ai_triage_done",
