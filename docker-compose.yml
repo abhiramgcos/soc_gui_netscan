@@ -206,7 +206,6 @@ services:
       - NET_ADMIN
     volumes:
       - ${EMBA_HOST_PATH:-/var/home/abhiramgcos/emba}:/emba
-      - ${EMBA_HOST_PATH:-/var/home/abhiramgcos/emba}/external:/external
       - firmware_data:/app/firmware
       - emba_logs:/app/emba_logs
       - /var/run/docker.sock:/var/run/docker.sock
