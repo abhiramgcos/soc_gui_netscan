@@ -49,6 +49,17 @@ class Settings(BaseSettings):
     ollama_url: str = "http://ollama:11434"
     ollama_model: str = "qwen3:4b"
 
+    # ── Pipeline timeouts & retries ─────────────
+    pipeline_timeout: int = 3600              # 1-hour hard cap for full pipeline
+    download_max_retries: int = 3
+    firmware_min_size_bytes: int = 1_000_000  # reject files < 1 MB
+    triage_num_predict_steps: str = "4096,2048,1024"  # comma-separated
+
+    # ── Alerting ─────────────────────────────────
+    alert_risk_threshold: float = 7.0
+    slack_webhook_url: str = ""
+    alert_email: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "case_sensitive": False}
 
 

@@ -17,11 +17,15 @@ class FirmwareStatus(str, enum.Enum):
     """Status of the firmware analysis pipeline."""
     PENDING = "pending"
     DOWNLOADING = "downloading"
+    VALIDATING = "validating"          # Stage A post-download validation
     DOWNLOADED = "downloaded"
     EMBA_QUEUED = "emba_queued"
+    EMBA_PREP = "emba_prep"            # Stage B CVE DB refresh + profile generation
     EMBA_RUNNING = "emba_running"
     EMBA_DONE = "emba_done"
+    POST_PROCESSING = "post_processing" # Stage D output validation
     TRIAGING = "triaging"
+    ALERTING = "alerting"              # Stage G dispatch
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"

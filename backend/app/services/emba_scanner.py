@@ -3,6 +3,10 @@ Stage B — Run EMBA firmware analysis.
 
 Executes EMBA on a downloaded firmware binary and stores
 the log directory path.  Supports optional GPT-assisted scanning.
+
+Also exposes:
+  prepare_emba(log_dir, logger) — Stage B pre-flight: refresh CVE DB + write IoT profile.
+  validate_emba_output(log_dir, logger) — Stage D: check expected output files exist.
 """
 
 from __future__ import annotations
@@ -14,9 +18,10 @@ import pathlib
 import re
 import shlex
 import shutil
-from typing import Awaitable, Callable
+from typing import Any, Awaitable, Callable
 
 from app.config import settings
+from app.utils.exceptions import EMBAScanError, EMBAScanTimeout
 from app.utils.logging import get_logger
 
 log = get_logger("firmware.emba")
@@ -25,6 +30,88 @@ ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 
 EMBA_LOGS = pathlib.Path(settings.emba_logs_dir)
 EMBA_LOGS.mkdir(parents=True, exist_ok=True)
+
+
+async def prepare_emba(
+    log_dir: str,
+    emba_container_name: str,
+    emba_home: str,
+) -> None:
+    """
+    Stage B pre-flight: refresh CVE DB inside the EMBA container and write a
+    minimal IoT scan profile into *log_dir*.
+
+    Exit code 1 from cve-bin-tool update is treated as success (cached DB).
+    Any other failure is logged as a warning and does not abort the pipeline.
+    """
+    profile_path = pathlib.Path(log_dir) / "iot-scan.emba"
+    profile_path.parent.mkdir(parents=True, exist_ok=True)
+    profile_path.write_text(
+        "# Auto-generated IoT scan profile\n"
+        "export MODULE_BLACKLIST=(\"S109_jtr\" \"F20_vul_aggregator\")\n"
+        "export QUICK=1\n"
+    )
+    log.info("emba_profile_written", path=str(profile_path))
+
+    docker_bin = shutil.which("docker")
+    if not docker_bin:
+        log.warning("emba_prep_skipped", reason="docker CLI not found")
+        return
+
+    cve_update_cmd = [
+        "docker", "exec", emba_container_name,
+        "/bin/bash", "-lc",
+        (
+            f"cd {shlex.quote(emba_home)} && "
+            "source external/emba_venv/bin/activate 2>/dev/null || true && "
+            "cve-bin-tool update -n api -u latest 2>&1 || true"
+        ),
+    ]
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cve_update_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=180)
+        output = (stdout or b"").decode(errors="replace")[:500]
+        # rc 0 = updated, rc 1 = already current / used cached
+        if proc.returncode not in (0, 1):
+            log.warning(
+                "emba_cve_update_partial",
+                returncode=proc.returncode,
+                output=output,
+            )
+        else:
+            log.info("emba_cve_update_ok", returncode=proc.returncode)
+    except asyncio.TimeoutError:
+        log.warning("emba_cve_update_timeout")
+    except Exception as exc:
+        log.warning("emba_cve_update_failed", error=str(exc))
+
+
+def validate_emba_output(log_dir: str) -> dict[str, Any]:
+    """
+    Stage D: check that EMBA produced at least the expected output files.
+
+    Returns a dict with keys:
+      - ``valid`` (bool): True if all expected files are present.
+      - ``files`` (dict[str, bool]): per-file presence flags.
+
+    Missing files are logged as warnings; the function never raises.
+    """
+    expected = {
+        "fw_grep.log": (pathlib.Path(log_dir) / "fw_grep.log").exists(),
+        "s08_main_package_sbom.txt": (pathlib.Path(log_dir) / "s08_main_package_sbom.txt").exists(),
+        "html-report": (pathlib.Path(log_dir) / "html-report").is_dir(),
+    }
+    missing = [k for k, v in expected.items() if not v]
+    if missing:
+        log.warning("emba_output_incomplete", missing=missing, log_dir=log_dir)
+    else:
+        log.info("emba_output_valid", log_dir=log_dir)
+    return {"valid": len(missing) == 0, "files": expected}
 
 
 async def run_emba(
@@ -96,6 +183,14 @@ async def run_emba(
 
     await notify(f"Starting EMBA scan on {ip} ({fw_path})")
 
+    # ── Stage B pre-flight: CVE DB refresh + IoT profile ───────────
+    await notify("Preparing EMBA: refreshing CVE database and writing IoT profile")
+    await prepare_emba(
+        log_dir=log_dir_for_emba,
+        emba_container_name=emba_container_name,
+        emba_home=emba_home,
+    )
+
     log.info(
         "emba_start",
         fw_path=fw_path,
@@ -115,15 +210,29 @@ async def run_emba(
     cmd = [emba_path, "-f", fw_path_for_emba, "-l", log_dir_for_emba, "-F", "-y"]
 
     # Check for profile availability and extend command if needed
-    profile_candidates = [emba_profile, "quick-scan.emba", "default-scan.emba"]
+    # Prefer the auto-generated IoT profile, then fall back to configured/default ones
+    iot_profile_path = pathlib.Path(log_dir_for_emba) / "iot-scan.emba"
+    profile_candidates = [
+        str(iot_profile_path) if iot_profile_path.exists() else "",
+        emba_profile,
+        "quick-scan.emba",
+        "default-scan.emba",
+    ]
     selected_profile = ""
     profile_args: list[str] = []
     if use_emba_container:
-        selected_profile = emba_profile
+        selected_profile = str(iot_profile_path) if iot_profile_path.exists() else emba_profile
     else:
         for candidate in profile_candidates:
             if not candidate:
                 continue
+            # Absolute path (IoT profile written to log_dir)
+            cpath = pathlib.Path(candidate)
+            if cpath.is_absolute() and cpath.exists():
+                selected_profile = candidate
+                profile_args = ["-p", candidate]
+                break
+            # Relative path resolved from emba_home/scan-profiles
             candidate_path = pathlib.Path(emba_home) / "scan-profiles" / candidate
             if candidate_path.exists():
                 selected_profile = candidate
@@ -239,8 +348,15 @@ async def run_emba(
         if proc.returncode != 0:
             err_msg = stderr_tail or "Unknown error"
             log.error("emba_failed", returncode=proc.returncode, stderr=err_msg[:500])
-            raise RuntimeError(
+            raise EMBAScanError(
                 f"EMBA exited with code {proc.returncode}: {err_msg[:500]}"
+            )
+
+        # ── Stage D: quick output quality gate ──────
+        fw_grep = pathlib.Path(log_dir) / "fw_grep.log"
+        if not fw_grep.exists():
+            raise EMBAScanError(
+                f"EMBA produced no fw_grep.log in {log_dir} — scan likely produced no output"
             )
 
         log.info("emba_done", log_dir=log_dir)
@@ -272,6 +388,6 @@ async def run_emba(
             except Exception:
                 log.warning("emba_timeout_cleanup_failed", log_dir=log_dir_for_emba)
         await notify(f"EMBA scan timed out after {effective_timeout}s")
-        raise
+        raise EMBAScanTimeout(f"EMBA exceeded timeout of {effective_timeout}s for {ip}")
 
     return log_dir

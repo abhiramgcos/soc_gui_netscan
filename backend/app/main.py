@@ -6,13 +6,24 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, Response
+from prometheus_client import (
+    generate_latest,
+    CONTENT_TYPE_LATEST,
+    REGISTRY,
+)
 
 from app.config import settings
 from app.utils.logging import configure_logging, get_logger
+from app.utils.metrics import (  # noqa: F401 — registers metrics on import
+    FW_PIPELINE_DURATION,
+    FW_PIPELINE_FAILURES,
+    FW_FINDINGS,
+)
 
 configure_logging(settings.log_level)
 log = get_logger("main")
+
 
 
 @asynccontextmanager
@@ -61,10 +72,17 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# ── Health ──────────────────────────────────────
+# ── Health ───────────────────────────────────────
 @app.get("/health", tags=["system"])
 async def health_check():
     return {"status": "healthy", "service": "soc-api"}
+
+
+# ── Prometheus metrics ─────────────────────────────────
+@app.get("/metrics", tags=["system"], include_in_schema=False)
+async def prometheus_metrics():
+    """Expose Prometheus metrics for scraping."""
+    return Response(generate_latest(REGISTRY), media_type=CONTENT_TYPE_LATEST)
 
 
 # ── Register routers ───────────────────────────
