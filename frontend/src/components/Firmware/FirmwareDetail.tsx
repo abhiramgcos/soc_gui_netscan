@@ -23,6 +23,22 @@ const STAGE_ICONS = [Download, Cpu, Brain];
 const STAGE_NAMES = ['Download Firmware', 'EMBA Analysis', 'AI Triage'];
 const ANSI_ESCAPE_RE = /\u001b\[[0-?]*[ -/]*[@-~]/g;
 
+/**
+ * Strip dangerous tags (script, style, iframe, etc.) but keep safe HTML
+ * for report rendering. This is a lightweight sanitizer — the report is
+ * generated server-side by our own Ollama pipeline, not by untrusted users.
+ */
+function sanitizeReportHtml(html: string): string {
+  // Remove script/style/iframe/object/embed tags and their content
+  let cleaned = html.replace(/<(script|style|iframe|object|embed|form|input|textarea|button|link|meta)[^>]*>[\s\S]*?<\/\1>/gi, '');
+  cleaned = cleaned.replace(/<(script|style|iframe|object|embed|form|input|textarea|button|link|meta)[^>]*\/?>/gi, '');
+  // Remove event handlers (onerror, onclick, etc.)
+  cleaned = cleaned.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  // Remove javascript: URLs
+  cleaned = cleaned.replace(/href\s*=\s*["']?\s*javascript:/gi, 'href="');
+  return cleaned;
+}
+
 function riskColor(score: number | null): string {
   if (score === null) return 'var(--text-muted)';
   if (score >= 8) return 'var(--accent-red)';
@@ -410,16 +426,9 @@ function FirmwareDetail() {
               <div className="loading-overlay"><div className="spinner" /></div>
             ) : report ? (
               <div
-                className="markdown-body"
-                style={{
-                  whiteSpace: 'pre-wrap',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                }}
-              >
-                {report.report}
-              </div>
+                className="firmware-report"
+                dangerouslySetInnerHTML={{ __html: sanitizeReportHtml(report.report) }}
+              />
             ) : (
               <div className="empty-state">
                 <FileText size={40} />

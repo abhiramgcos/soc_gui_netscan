@@ -174,14 +174,22 @@ You receive compact JSON with:
 3) Security findings
 
 Task:
-- Produce a vendor-facing security report
+- Produce a vendor-facing security report as **valid HTML** (no Markdown)
+- Use semantic HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <table>, <thead>, <tbody>, <tr>, <th>, <td>, <strong>, <em>, <code>, <span>
+- Do NOT include <html>, <head>, <body>, <style>, or <script> tags — only the inner report content
 - Sections: Overview, Key Risks, Detailed Findings, Recommended Fixes, Supply Chain Risks
 - Avoid duplicate findings and keep concise
 - Use only evidence present in input
 - Provide overall risk score out of 10
+- Color-code severity with inline CSS classes:
+  - <span class="severity-critical">CRITICAL</span>
+  - <span class="severity-high">HIGH</span>
+  - <span class="severity-medium">MEDIUM</span>
+  - <span class="severity-low">LOW</span>
+- For CVE tables, use: <table class="report-table"><thead><tr><th>CVE ID</th><th>CVSS</th><th>Component</th><th>Notes</th></tr></thead><tbody>...</tbody></table>
 
-Output clean Markdown and start with:
-## Risk Score: X/10
+Start the report with:
+<h2 class="risk-score">Risk Score: X/10</h2>
 
 JSON input:
 <JSON>
@@ -373,26 +381,27 @@ def _build_fallback_report(
     if critical_count == 0 and high_count == 0 and findings:
         risk_score = 5.0
 
-    preview = "\n".join(f"- {line}" for line in findings[:20])
+    findings_html = "\n".join(f"<li>{line}</li>" for line in findings[:20]) if findings else "<li>No findings extracted</li>"
     report = (
-        f"## Risk Score: {risk_score:.1f}/10\n\n"
-        "## Executive Summary\n\n"
-        "Automated fallback triage was used because Ollama returned an empty response. "
-        "This report is generated from EMBA finding heuristics and should be reviewed manually.\n\n"
-        "## Critical\n\n"
-        f"Estimated critical findings: **{critical_count}**\n\n"
-        "## High\n\n"
-        f"Estimated high findings: **{high_count}**\n\n"
-        "## Medium\n\n"
-        "Potential medium findings may exist; manual validation recommended.\n\n"
-        "## Low\n\n"
-        "Low-severity and informational findings are not exhaustively categorized in fallback mode.\n\n"
-        "## Extracted Findings (Sample)\n\n"
-        f"{preview if preview else '- No findings extracted'}\n\n"
-        "## CVE Summary\n\n"
-        "| CVE ID | CVSS | Notes |\n"
-        "|---|---:|---|\n"
-        "| N/A | N/A | Fallback mode - review EMBA raw logs |\n"
+        f'<h2 class="risk-score">Risk Score: {risk_score:.1f}/10</h2>\n'
+        "<h3>Executive Summary</h3>\n"
+        "<p>Automated fallback triage was used because Ollama returned an empty response. "
+        "This report is generated from EMBA finding heuristics and should be reviewed manually.</p>\n"
+        "<h3>Critical</h3>\n"
+        f"<p>Estimated critical findings: <strong>{critical_count}</strong></p>\n"
+        "<h3>High</h3>\n"
+        f"<p>Estimated high findings: <strong>{high_count}</strong></p>\n"
+        "<h3>Medium</h3>\n"
+        "<p>Potential medium findings may exist; manual validation recommended.</p>\n"
+        "<h3>Low</h3>\n"
+        "<p>Low-severity and informational findings are not exhaustively categorized in fallback mode.</p>\n"
+        "<h3>Extracted Findings (Sample)</h3>\n"
+        f"<ul>\n{findings_html}\n</ul>\n"
+        "<h3>CVE Summary</h3>\n"
+        '<table class="report-table">\n'
+        "<thead><tr><th>CVE ID</th><th>CVSS</th><th>Notes</th></tr></thead>\n"
+        "<tbody><tr><td>N/A</td><td>N/A</td><td>Fallback mode — review EMBA raw logs</td></tr></tbody>\n"
+        "</table>\n"
     )
     return report, risk_score, critical_count, high_count
 
@@ -549,13 +558,13 @@ async def run_triage(
 
     if not findings_count:
         no_findings_report = (
-            "## Risk Score: N/A\n\n"
-            "## Executive Summary\n\n"
-            "No security-relevant findings were extracted from the EMBA scan logs. "
+            '<h2 class="risk-score">Risk Score: N/A</h2>\n'
+            "<h3>Executive Summary</h3>\n"
+            "<p>No security-relevant findings were extracted from the EMBA scan logs. "
             "This could indicate a clean firmware image, or that the firmware format "
-            "was not fully supported by EMBA's analysis modules.\n\n"
-            "## Recommendation\n\n"
-            "Manual review of the firmware binary is recommended."
+            "was not fully supported by EMBA's analysis modules.</p>\n"
+            "<h3>Recommendation</h3>\n"
+            "<p>Manual review of the firmware binary is recommended.</p>\n"
         )
         return no_findings_report, None, 0, 0, 0
 
@@ -566,8 +575,8 @@ async def run_triage(
         compact_payload, ip, vendor, ports, mac, on_progress=on_progress,
     )
 
-    # Save report as Markdown file alongside EMBA logs
-    report_path = pathlib.Path(emba_log_dir) / "ai_triage.md"
+    # Save report as HTML file alongside EMBA logs
+    report_path = pathlib.Path(emba_log_dir) / "ai_triage.html"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(report)
 

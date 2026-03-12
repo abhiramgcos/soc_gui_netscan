@@ -37,8 +37,8 @@ class Settings(BaseSettings):
     emba_home: str = "/opt/emba"
     emba_timeout: int = 1800                     # 30 minutes max per device
     emba_gpt_level: str = "1"                    # 1=scripts/configs, 2=+binary
-    emba_profile: str = "quick-scan.emba"
-    emba_fast_mode: str = "1"
+    emba_profile: str = "default-scan.emba"
+    emba_fast_mode: str = "0"
     emba_modules: str = "p05,s10,s20,s40"
     triage_max_findings: int = 120
     emba_container_name: str = "soc_emba"
@@ -46,8 +46,8 @@ class Settings(BaseSettings):
     emba_logs_dir: str = "/app/emba_logs"
 
     # ── Ollama (local LLM for AI triage) ────────
-    ollama_url: str = "http://ollama:11434"
-    ollama_model: str = "qwen3:4b"
+    ollama_url: str = "http://host.docker.internal:11434"
+    ollama_model: str = "qwen3.5"
 
     # ── Pipeline timeouts & retries ─────────────
     pipeline_timeout: int = 3600              # 1-hour hard cap for full pipeline

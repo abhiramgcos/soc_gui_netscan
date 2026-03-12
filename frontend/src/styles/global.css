@@ -1127,3 +1127,156 @@ a:hover {
 .text-sm { font-size: 12px; }
 .font-mono { font-family: var(--font-mono); }
 .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Firmware Report (AI Triage HTML) ──────── */
+.firmware-report {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  overflow-wrap: break-word;
+}
+
+.firmware-report h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 24px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-primary);
+  color: var(--text-primary);
+}
+
+.firmware-report h2:first-child {
+  margin-top: 0;
+}
+
+.firmware-report h2.risk-score {
+  font-size: 26px;
+  color: var(--accent-blue);
+  border-bottom: 2px solid var(--border-secondary);
+}
+
+.firmware-report h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 20px 0 8px;
+  color: var(--text-secondary);
+}
+
+.firmware-report p {
+  margin: 8px 0;
+}
+
+.firmware-report ul,
+.firmware-report ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.firmware-report li {
+  margin: 4px 0;
+}
+
+.firmware-report code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.firmware-report pre {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.firmware-report strong,
+.firmware-report b {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Severity badges */
+.firmware-report .severity-critical {
+  color: #ff453a;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.firmware-report .severity-high {
+  color: #ff9f0a;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.firmware-report .severity-medium {
+  color: #ffd60a;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.firmware-report .severity-low {
+  color: #30d158;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Report tables */
+.firmware-report table,
+.firmware-report .report-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+
+.firmware-report table th,
+.firmware-report .report-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.firmware-report table td,
+.firmware-report .report-table td {
+  padding: 8px 12px;
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  vertical-align: top;
+}
+
+.firmware-report table tr:hover td,
+.firmware-report .report-table tr:hover td {
+  background: var(--bg-card-hover);
+}
+
+.firmware-report blockquote {
+  border-left: 3px solid var(--border-secondary);
+  margin: 12px 0;
+  padding: 8px 16px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border-radius: 0 6px 6px 0;
+}
+
+.firmware-report hr {
+  border: none;
+  border-top: 1px solid var(--border-primary);
+  margin: 20px 0;
+}
+
+.firmware-report a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+.firmware-report a:hover {
+  text-decoration: underline;
+}

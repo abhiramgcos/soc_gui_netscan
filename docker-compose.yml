@@ -39,14 +39,14 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
       WORKERS: ${API_WORKERS:-2}
       # Firmware analysis
-      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5}
       EMBA_PATH: ${EMBA_PATH:-/opt/emba/emba}
       EMBA_HOME: /opt/emba
       EMBA_TIMEOUT: ${EMBA_TIMEOUT:-1800}
       EMBA_GPT_LEVEL: ${EMBA_GPT_LEVEL:-1}
-      EMBA_PROFILE: ${EMBA_PROFILE:-quick-scan.emba}
-      EMBA_FAST_MODE: ${EMBA_FAST_MODE:-1}
+      EMBA_PROFILE: ${EMBA_PROFILE:-default-scan.emba}
+      EMBA_FAST_MODE: ${EMBA_FAST_MODE:-0}
       EMBA_MODULES: ${EMBA_MODULES:-p05,s10,s20,s40}
       TRIAGE_MAX_FINDINGS: ${TRIAGE_MAX_FINDINGS:-120}
       SCAN_INTERFACE: ${SCAN_INTERFACE:-eth0}
@@ -98,14 +98,14 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
       # Firmware analysis
-      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5}
       EMBA_PATH: ${EMBA_PATH:-/opt/emba/emba}
       EMBA_HOME: /opt/emba
       EMBA_TIMEOUT: ${EMBA_TIMEOUT:-1800}
       EMBA_GPT_LEVEL: ${EMBA_GPT_LEVEL:-1}
-      EMBA_PROFILE: ${EMBA_PROFILE:-quick-scan.emba}
-      EMBA_FAST_MODE: ${EMBA_FAST_MODE:-1}
+      EMBA_PROFILE: ${EMBA_PROFILE:-default-scan.emba}
+      EMBA_FAST_MODE: ${EMBA_FAST_MODE:-0}
       EMBA_MODULES: ${EMBA_MODULES:-p05,s10,s20,s40}
       TRIAGE_MAX_FINDINGS: ${TRIAGE_MAX_FINDINGS:-120}
       SCAN_INTERFACE: ${SCAN_INTERFACE:-eth0}
