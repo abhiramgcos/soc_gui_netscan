@@ -239,13 +239,26 @@ async def run_emba(
                 profile_args = ["-p", f"scan-profiles/{candidate}"]
                 break
 
+    # Only pass explicit -m module flags when NO profile is selected.
+    # When a profile is active (e.g. quick-scan.emba), it controls module
+    # selection including critical extraction modules (P55/P60).  Explicit
+    # -m flags *override* the profile and skip extraction, causing empty output.
     module_args_list: list[str] = []
-    for module in emba_modules:
-        module_args_list.extend(["-m", module])
+    if not selected_profile:
+        for module in emba_modules:
+            module_args_list.extend(["-m", module])
+        log.info("emba_explicit_modules", modules=emba_modules)
+    else:
+        log.info("emba_profile_selected", profile=selected_profile, note="skipping explicit -m flags")
 
     if use_emba_container:
         requested_profile = shlex.quote(emba_profile)
-        module_arg_str = " ".join(f"-m {shlex.quote(module)}" for module in emba_modules)
+        # Only inject -m flags when no profile will be resolved
+        module_arg_str = (
+            " ".join(f"-m {shlex.quote(module)}" for module in emba_modules)
+            if not selected_profile
+            else ""
+        )
         fast_mode_arg = "-q" if emba_fast_mode else ""
         emba_shell_cmd = (
             "export USER=root SUDO_USER=root SUDO_UID=0 SUDO_GID=0 HOME=/root; "
