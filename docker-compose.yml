@@ -203,6 +203,7 @@ services:
     environment:
       USER: root
       SUDO_USER: root
+      NVD_API_KEY: ${NVD_API_KEY:-}
     privileged: true
     cap_add:
       - SYS_ADMIN
