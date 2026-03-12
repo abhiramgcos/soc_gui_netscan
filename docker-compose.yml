@@ -199,7 +199,7 @@ services:
     restart: unless-stopped
     init: true
     entrypoint: ["/bin/bash", "-lc"]
-    command: ["tail -f /dev/null"]
+    command: ["pip3 install --break-system-packages -e /external/cve-bin-tool >/dev/null 2>&1; exec tail -f /dev/null"]
     environment:
       USER: root
       SUDO_USER: root
