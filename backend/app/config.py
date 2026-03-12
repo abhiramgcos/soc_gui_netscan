@@ -47,7 +47,7 @@ class Settings(BaseSettings):
 
     # ── Ollama (local LLM for AI triage) ────────
     ollama_url: str = "http://host.docker.internal:11434"
-    ollama_model: str = "qwen3.5"
+    ollama_model: str = "qwen3.5:4b"
 
     # ── Pipeline timeouts & retries ─────────────
     pipeline_timeout: int = 3600              # 1-hour hard cap for full pipeline

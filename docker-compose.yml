@@ -42,7 +42,7 @@ services:
       WORKERS: ${API_WORKERS:-2}
       # Firmware analysis
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5:4b}
       EMBA_PATH: ${EMBA_PATH:-/opt/emba/emba}
       EMBA_HOME: /opt/emba
       EMBA_TIMEOUT: ${EMBA_TIMEOUT:-1800}
@@ -103,7 +103,7 @@ services:
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
       # Firmware analysis
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5:4b}
       EMBA_PATH: ${EMBA_PATH:-/opt/emba/emba}
       EMBA_HOME: /opt/emba
       EMBA_TIMEOUT: ${EMBA_TIMEOUT:-1800}
