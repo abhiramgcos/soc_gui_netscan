@@ -306,6 +306,10 @@ async def run_emba(
 
     await notify(f"EMBA running on {ip} (timeout: {effective_timeout}s)")
 
+    # Buffer to capture EMBA output for post-mortem diagnostics
+    _output_buffer: list[str] = []
+    _OUTPUT_BUFFER_MAX_LINES = 200
+
     async def stream_output(stream: asyncio.StreamReader | None, prefix: str):
         if stream is None:
             return
@@ -321,7 +325,42 @@ async def run_emba(
                 continue
             text = ANSI_ESCAPE_RE.sub("", text)
             text = text[:300]
+            # Keep last N lines for diagnostics file
+            _output_buffer.append(f"{prefix} {text}")
+            if len(_output_buffer) > _OUTPUT_BUFFER_MAX_LINES:
+                _output_buffer.pop(0)
             await notify(f"{prefix} {text}")
+
+    # ── Container health pre-check ──────────────────────────────────
+    if use_emba_container:
+        await notify("Checking EMBA container health…")
+        try:
+            health_proc = await asyncio.create_subprocess_exec(
+                "docker", "exec", emba_container_name, "echo", "ok",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            h_stdout, h_stderr = await asyncio.wait_for(
+                health_proc.communicate(), timeout=15,
+            )
+            if health_proc.returncode != 0:
+                detail = (h_stderr or b"").decode(errors="replace")[:300]
+                raise EMBAScanError(
+                    f"EMBA container '{emba_container_name}' is not responding "
+                    f"(exit {health_proc.returncode}): {detail}. "
+                    "Check `docker ps` and container logs."
+                )
+            log.info("emba_container_healthy", container=emba_container_name)
+        except asyncio.TimeoutError:
+            raise EMBAScanError(
+                f"EMBA container '{emba_container_name}' health-check timed out (15 s). "
+                "The container may be frozen or OOM-killed — check `docker ps` and `docker logs`."
+            )
+        except EMBAScanError:
+            raise
+        except Exception as exc:
+            log.warning("emba_container_health_check_failed", error=str(exc))
+            # Non-fatal: proceed and let the actual scan attempt surface the real error
 
     proc = None
     try:
@@ -355,9 +394,42 @@ async def run_emba(
         # ── Stage D: quick output quality gate ──────
         fw_grep = pathlib.Path(log_dir) / "fw_grep.log"
         if not fw_grep.exists():
-            raise EMBAScanError(
-                f"EMBA produced no fw_grep.log in {log_dir} — scan likely produced no output"
+            # Capture diagnostic info: what files *did* EMBA produce?
+            log_dir_path = pathlib.Path(log_dir)
+            files_found: list[str] = []
+            if log_dir_path.is_dir():
+                for entry in sorted(log_dir_path.rglob("*")):
+                    if entry.is_file():
+                        rel = str(entry.relative_to(log_dir_path))
+                        files_found.append(rel)
+                        if len(files_found) >= 50:  # cap listing
+                            break
+
+            log.warning(
+                "emba_no_fw_grep",
+                log_dir=log_dir,
+                files_found=files_found,
+                message=(
+                    "EMBA produced no fw_grep.log — scan likely produced no "
+                    "extractable output.  Pipeline will continue to AI triage "
+                    "which will inject vendor-known-issues as fallback."
+                ),
             )
+            diag_msg = (
+                f"WARNING: EMBA produced no fw_grep.log in {log_dir}. "
+                f"Files found: {files_found or 'none'}. "
+                "Proceeding to AI triage with fallback findings."
+            )
+            await notify(diag_msg)
+
+        # Persist EMBA stdout/stderr for post-mortem debugging
+        try:
+            stdout_log_path = pathlib.Path(log_dir) / "emba_stdout.log"
+            stdout_log_path.parent.mkdir(parents=True, exist_ok=True)
+            stdout_log_path.write_text("\n".join(_output_buffer))
+            log.info("emba_stdout_persisted", path=str(stdout_log_path), lines=len(_output_buffer))
+        except Exception as wexc:
+            log.warning("emba_stdout_persist_failed", error=str(wexc))
 
         log.info("emba_done", log_dir=log_dir)
         await notify(f"EMBA scan completed for {ip}")
@@ -387,6 +459,13 @@ async def run_emba(
                 await asyncio.wait_for(cleanup_proc.wait(), timeout=10)
             except Exception:
                 log.warning("emba_timeout_cleanup_failed", log_dir=log_dir_for_emba)
+        # Persist captured output even on timeout for debugging
+        try:
+            stdout_log_path = pathlib.Path(log_dir) / "emba_stdout.log"
+            stdout_log_path.parent.mkdir(parents=True, exist_ok=True)
+            stdout_log_path.write_text("\n".join(_output_buffer))
+        except Exception:
+            pass
         await notify(f"EMBA scan timed out after {effective_timeout}s")
         raise EMBAScanTimeout(f"EMBA exceeded timeout of {effective_timeout}s for {ip}")
 

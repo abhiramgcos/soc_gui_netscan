@@ -326,6 +326,28 @@ async def _pipeline_core(
     return pipeline_result
 
 
+# ── Helpers (error context) ───────────────────────────────────────────────────
+
+async def _resolve_ip_for_analysis(aid: uuid.UUID) -> str:
+    """Best-effort lookup of the device IP for an analysis record."""
+    try:
+        async with async_session() as db:
+            result = await db.execute(
+                select(FirmwareAnalysis).where(FirmwareAnalysis.id == aid)
+            )
+            analysis = result.scalar_one_or_none()
+            if analysis and analysis.host_mac:
+                host_result = await db.execute(
+                    select(Host).where(Host.mac_address == analysis.host_mac)
+                )
+                host = host_result.scalar_one_or_none()
+                if host:
+                    return host.ip_address
+    except Exception:
+        pass
+    return "unknown"
+
+
 # ── Public entry point ───────────────────────────────────────────────────────
 
 async def run_firmware_pipeline(
@@ -355,7 +377,8 @@ async def run_firmware_pipeline(
         )
 
     except asyncio.TimeoutError:
-        log.error("fw_pipeline_timeout", analysis_id=analysis_id, timeout=settings.pipeline_timeout)
+        ip = await _resolve_ip_for_analysis(aid)
+        log.error("fw_pipeline_timeout", analysis_id=analysis_id, timeout=settings.pipeline_timeout, ip=ip)
         try:
             async with async_session() as db:
                 await _update_analysis(
@@ -396,7 +419,8 @@ async def run_firmware_pipeline(
         return
 
     except Exception as e:
-        log.error("fw_pipeline_failed", analysis_id=analysis_id, error=str(e), exc_info=True)
+        ip = await _resolve_ip_for_analysis(aid)
+        log.error("fw_pipeline_failed", analysis_id=analysis_id, error=str(e), ip=ip, exc_info=True)
         try:
             async with async_session() as db:
                 await _update_analysis(
