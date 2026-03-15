@@ -7,6 +7,7 @@ import HostTable from './components/Hosts/HostTable';
 import HostDetail from './components/Hosts/HostDetail';
 import FirmwareList from './components/Firmware/FirmwareList';
 import FirmwareDetail from './components/Firmware/FirmwareDetail';
+import CertificatePage from './components/Certificate/CertificatePage';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/hosts/:mac" element={<HostDetail />} />
         <Route path="/firmware" element={<FirmwareList />} />
         <Route path="/firmware/:id" element={<FirmwareDetail />} />
+        <Route path="/certificate" element={<CertificatePage />} />
       </Routes>
     </Layout>
   );
