@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import distinct, func, select
+from sqlalchemy import desc, distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -322,7 +322,59 @@ async def delete_firmware_analysis(
     if not analysis:
         raise HTTPException(404, "Firmware analysis not found")
 
+    host_mac = analysis.host_mac
+
     await db.delete(analysis)
+    await db.flush()
+
+    # Keep Host firmware cache aligned with remaining analyses for this host.
+    host_result = await db.execute(select(Host).where(Host.mac_address == host_mac))
+    host = host_result.scalar_one_or_none()
+
+    if host:
+        latest_completed_result = await db.execute(
+            select(FirmwareAnalysis).where(
+                FirmwareAnalysis.host_mac == host_mac,
+                FirmwareAnalysis.status == FirmwareStatus.COMPLETED,
+            ).order_by(
+                desc(FirmwareAnalysis.completed_at),
+                desc(FirmwareAnalysis.created_at),
+            ).limit(1)
+        )
+        latest_completed = latest_completed_result.scalar_one_or_none()
+
+        if latest_completed:
+            host.fw_path = latest_completed.fw_path
+            host.fw_hash = latest_completed.fw_hash
+            host.emba_log_dir = latest_completed.emba_log_dir
+            host.risk_report = latest_completed.risk_report
+            host.risk_score = latest_completed.risk_score
+            host.firmware_status = FirmwareStatus.COMPLETED.value
+        else:
+            latest_any_result = await db.execute(
+                select(FirmwareAnalysis).where(
+                    FirmwareAnalysis.host_mac == host_mac,
+                ).order_by(
+                    desc(FirmwareAnalysis.created_at),
+                ).limit(1)
+            )
+            latest_any = latest_any_result.scalar_one_or_none()
+
+            if latest_any:
+                host.fw_path = latest_any.fw_path
+                host.fw_hash = latest_any.fw_hash
+                host.emba_log_dir = latest_any.emba_log_dir
+                host.risk_report = None
+                host.risk_score = None
+                host.firmware_status = latest_any.status.value
+            else:
+                host.fw_path = None
+                host.fw_hash = None
+                host.emba_log_dir = None
+                host.risk_report = None
+                host.risk_score = None
+                host.firmware_status = None
+
     await db.commit()
 
 
