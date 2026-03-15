@@ -266,6 +266,8 @@ async def run_emba(
             "rm -rf /emba/external; ln -s /external /emba/external; "
             "fi; "
             "mkdir -p /emba/config; "
+            # Pre-create log tmp dir so cve-bin-tool health check can write its CSV
+            f"mkdir -p '{log_dir_for_emba}/tmp'; "
             "if [ ! -f /emba/config/cve-database.db ] && [ -f /external/cve-bin-tool/cve-database.db ]; then "
             "cp /external/cve-bin-tool/cve-database.db /emba/config/cve-database.db; "
             "fi; "
@@ -290,8 +292,16 @@ async def run_emba(
             "if [ -n \"$p\" ] && [ -f \"/emba/scan-profiles/$p\" ]; then PROFILE_ARG=\"-p scan-profiles/$p\"; break; fi; "
             "done; "
             "cd /emba && "
+            # NOTE: Do NOT pass -D (dev mode). The -D flag sets USE_DOCKER=0
+            # during dependency_check, which skips check_docker_version() so
+            # DOCKER_COMPOSE is never populated.  The profile then overrides
+            # USE_DOCKER back to 1 → EMBA tries Docker mode with an empty
+            # DOCKER_COMPOSE → "run: command not found" → scan exits in seconds
+            # with zero analysis.  Without -D, EMBA properly initialises its
+            # Docker-in-Docker environment (spawning emba + emba_quest sub-
+            # containers via docker compose).
             f"./emba -f '{fw_path_for_emba}' -l '{log_dir_for_emba}' "
-            f"$PROFILE_ARG {module_arg_str} {fast_mode_arg} -c -D -F -y"
+            f"$PROFILE_ARG {module_arg_str} {fast_mode_arg} -c -F -y"
         )
         cmd = [
             "docker",
