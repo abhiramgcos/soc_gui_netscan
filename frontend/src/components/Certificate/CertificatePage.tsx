@@ -10,7 +10,32 @@ interface CertificateData {
   devices: Host[];
 }
 
-const MAX_HOSTS = 500;
+const HOSTS_PAGE_SIZE = 200;
+
+async function fetchAllHosts(): Promise<HostListResponse> {
+  const firstPage = await hostsApi.list({ page: '1', page_size: String(HOSTS_PAGE_SIZE) });
+  const totalPages = Math.max(1, Math.ceil(firstPage.total / HOSTS_PAGE_SIZE));
+
+  if (totalPages === 1) return firstPage;
+
+  const requests: Promise<HostListResponse>[] = [];
+  for (let page = 2; page <= totalPages; page += 1) {
+    requests.push(hostsApi.list({ page: String(page), page_size: String(HOSTS_PAGE_SIZE) }));
+  }
+
+  const remainingPages = await Promise.all(requests);
+  const allItems = [
+    ...firstPage.items,
+    ...remainingPages.flatMap((response) => response.items),
+  ];
+
+  return {
+    items: allItems,
+    total: firstPage.total,
+    page: 1,
+    page_size: allItems.length,
+  };
+}
 
 function getRiskLevel(score: number | null): 'low' | 'medium' | 'high' | 'critical' | 'na' {
   if (score === null) return 'na';
@@ -45,7 +70,7 @@ function CertificatePage() {
   const [certificate, setCertificate] = useState<CertificateData | null>(null);
 
   const { data, loading, error } = useFetch<HostListResponse>(
-    () => hostsApi.list({ page: '1', page_size: String(MAX_HOSTS) }),
+    () => fetchAllHosts(),
     [],
   );
 
