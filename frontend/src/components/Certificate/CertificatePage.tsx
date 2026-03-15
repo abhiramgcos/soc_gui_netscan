@@ -193,8 +193,8 @@ function CertificatePage() {
     <div className="certificate-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Security Certificate Generator</h1>
-          <p className="page-subtitle">Generate a printable certificate from selected device risk scores.</p>
+          <h1 className="page-title">FIRMAI Certificate Generator</h1>
+          <p className="page-subtitle">Generate a FIRMAI security certificate from completed firmware analyses.</p>
         </div>
       </div>
 
@@ -339,9 +339,16 @@ function CertificatePage() {
 
               <article className="certificate-doc">
                 <div className="certificate-doc-header">
-                  <div className="certificate-doc-kicker">NetRecon Security Program</div>
-                  <h2>Security Assessment Certificate</h2>
-                  <p>This certifies that the following network devices were evaluated for firmware security posture.</p>
+                  <div className="certificate-doc-kicker">FIRMAI Security Intelligence</div>
+                  <h2>Certificate by FIRMAI</h2>
+                  <p>
+                    This certifies that the following network devices were assessed by the FIRMAI
+                    firmware risk workflow and scored for security posture.
+                  </p>
+                  <div className="certificate-brand-line">
+                    <div className="certificate-seal">FIRMAI CERTIFIED</div>
+                    <div className="certificate-brand-note">Official Assessment Artifact</div>
+                  </div>
                 </div>
 
                 <div className="certificate-doc-meta">
@@ -398,8 +405,8 @@ function CertificatePage() {
                 </div>
 
                 <div className="certificate-doc-footer">
-                  <div>Issued by NetRecon Security Platform</div>
-                  <div className="certificate-signature">Authorized Digital Issuance</div>
+                  <div>Certificate by FIRMAI</div>
+                  <div className="certificate-signature">Authorized Digital Issuance - FIRMAI</div>
                 </div>
               </article>
             </>

@@ -44,8 +44,8 @@ function Layout({ children }: Props) {
             <circle cx="24" cy="24" r="2" fill="#ef4444" />
           </svg>
           <div>
-            <div className="sidebar-logo-text">NetRecon</div>
-            <div className="sidebar-logo-sub">Network Discovery</div>
+            <div className="sidebar-logo-text">FIRMAI</div>
+            <div className="sidebar-logo-sub">Firmware Intelligence</div>
           </div>
         </div>
 
