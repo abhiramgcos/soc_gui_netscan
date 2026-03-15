@@ -338,6 +338,11 @@ function CertificatePage() {
               </div>
 
               <article className="certificate-doc">
+                <div className="certificate-watermark" aria-hidden="true">
+                  <span>FIRMAI</span>
+                  <span>FIRMAI</span>
+                  <span>FIRMAI</span>
+                </div>
                 <div className="certificate-doc-header">
                   <div className="certificate-doc-kicker">FIRMAI Security Intelligence</div>
                   <h2>Certificate by FIRMAI</h2>

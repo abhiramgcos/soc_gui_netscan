@@ -1326,26 +1326,56 @@ a:hover {
 
 .certificate-doc {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 252, 255, 0.98));
-  color: #102132;
+    radial-gradient(140% 120% at 10% 0%, rgba(34, 211, 238, 0.1) 0%, rgba(34, 211, 238, 0) 55%),
+    radial-gradient(130% 130% at 100% 100%, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0) 60%),
+    linear-gradient(160deg, #d7dde4 0%, #cfd7df 36%, #e2e8ef 100%);
+  color: #0f2232;
   border-radius: var(--radius-xl);
-  border: 2px solid #8fb2d7;
-  box-shadow: 0 24px 40px rgba(6, 10, 19, 0.35);
+  border: 2px solid #6f8da7;
+  box-shadow: 0 24px 40px rgba(6, 10, 19, 0.4);
   padding: 36px;
   position: relative;
+  overflow: hidden;
 }
 
 .certificate-doc::before {
   content: '';
   position: absolute;
   inset: 10px;
-  border: 1px solid #d1e1f2;
+  border: 1px solid rgba(15, 50, 80, 0.22);
   border-radius: 10px;
   pointer-events: none;
 }
 
+.certificate-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.certificate-watermark span {
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  color: rgba(15, 68, 106, 0.09);
+  transform: rotate(-24deg);
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.certificate-doc > *:not(.certificate-watermark) {
+  position: relative;
+  z-index: 1;
+}
+
 .certificate-doc-header {
-  border-bottom: 2px solid #0f6faa;
+  border-bottom: 2px solid #0f4f78;
   padding-bottom: 18px;
   margin-bottom: 22px;
 }
@@ -1355,7 +1385,7 @@ a:hover {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #0f6faa;
+  color: #0f4f78;
   margin-bottom: 10px;
 }
 
@@ -1383,15 +1413,15 @@ a:hover {
 }
 
 .certificate-seal {
-  border: 1px solid #1d4ed8;
-  color: #1d4ed8;
+  border: 1px solid #0f4f78;
+  color: #0f4f78;
   border-radius: 999px;
   padding: 5px 12px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: #eff6ff;
+  background: rgba(222, 236, 246, 0.8);
 }
 
 .certificate-brand-note {
@@ -1405,8 +1435,8 @@ a:hover {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  background: #f2f8ff;
-  border: 1px solid #c8dced;
+  background: rgba(231, 239, 247, 0.76);
+  border: 1px solid #9fb6cb;
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 20px;
@@ -1416,7 +1446,7 @@ a:hover {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #567086;
+  color: #425e75;
   margin-bottom: 4px;
   font-weight: 600;
 }
@@ -1473,7 +1503,7 @@ a:hover {
 }
 
 .certificate-doc-table-wrap {
-  border: 1px solid #c8dced;
+  border: 1px solid #8ea9c0;
   border-radius: 10px;
   overflow: hidden;
 }
@@ -1486,10 +1516,10 @@ a:hover {
 
 .certificate-doc-table th {
   text-align: left;
-  background: #e7f3ff;
-  color: #11446a;
+  background: rgba(191, 221, 244, 0.72);
+  color: #0f3b5b;
   padding: 10px 12px;
-  border-bottom: 1px solid #c8dced;
+  border-bottom: 1px solid #8ea9c0;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1497,12 +1527,12 @@ a:hover {
 
 .certificate-doc-table td {
   padding: 10px 12px;
-  border-bottom: 1px solid #d7e5f1;
+  border-bottom: 1px solid #b1c4d3;
   color: #22394d;
 }
 
 .certificate-doc-table tbody tr:nth-child(even) td {
-  background: #fbfdff;
+  background: rgba(236, 243, 249, 0.72);
 }
 
 .certificate-doc-table tr:last-child td {
@@ -1542,6 +1572,11 @@ a:hover {
 @media (max-width: 768px) {
   .certificate-doc {
     padding: 18px;
+  }
+
+  .certificate-watermark span {
+    font-size: 42px;
+    letter-spacing: 0.2em;
   }
 
   .certificate-doc-header h2 {
@@ -1600,12 +1635,16 @@ a:hover {
 
   .certificate-doc {
     box-shadow: none;
-    border: none;
+    border: 1px solid #8ea9c0;
     border-radius: 0;
     width: 100%;
     min-height: 100vh;
     padding: 20mm;
     page-break-inside: avoid;
+  }
+
+  .certificate-watermark span {
+    color: rgba(15, 68, 106, 0.08);
   }
 
   .certificate-doc-table th,
