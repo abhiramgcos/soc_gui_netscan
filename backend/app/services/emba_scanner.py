@@ -48,8 +48,12 @@ async def prepare_emba(
     profile_path.parent.mkdir(parents=True, exist_ok=True)
     profile_path.write_text(
         "# Auto-generated IoT scan profile\n"
-        "export MODULE_BLACKLIST=(\"S109_jtr\" \"F20_vul_aggregator\")\n"
-        "export QUICK=1\n"
+        "# Only blacklist the password-cracking module (S109) to save time.\n"
+        "# Do NOT blacklist F20_vul_aggregator — it writes fw_grep.log which\n"
+        "# is required for triage finding extraction.\n"
+        "# Do NOT set QUICK=1 — it disables firmware extraction (P05/P60)\n"
+        "# and vulnerability modules, producing empty analysis output.\n"
+        "export MODULE_BLACKLIST=(\"S109_jtr\")\n"
     )
     log.info("emba_profile_written", path=str(profile_path))
 
@@ -261,7 +265,7 @@ async def run_emba(
         )
         fast_mode_arg = "-q" if emba_fast_mode else ""
         emba_shell_cmd = (
-            "export USER=root SUDO_USER=root SUDO_UID=0 SUDO_GID=0 HOME=/root; "
+            f"export USER=root SUDO_USER=root SUDO_UID=0 SUDO_GID=0 HOME=/root GPT_OPTION={shlex.quote(gpt_level)}; "
             "if [ ! -x /emba/external/binwalk/target/release/binwalk ] && [ -d /external ]; then "
             "rm -rf /emba/external; ln -s /external /emba/external; "
             "fi; "

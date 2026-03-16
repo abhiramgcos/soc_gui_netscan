@@ -31,31 +31,86 @@ _VENDOR_KNOWN_ISSUES: dict[str, list[str]] = {
         "CVE-2022-13756 OpenWrt dnsmasq heap overflow in DNS response parsing",
         "Default admin password unchanged (telnet/HTTP interface)",
         "Outdated dropbear SSH server with known weak-key exchange",
+        "OpenWrt LuCI web interface exposed with potential CSRF",
     ],
     "netgear": [
         "CVE-2021-34991 NETGEAR buffer overflow pre-authentication RCE",
         "Hardcoded credential in /etc/shadow (root: no password)",
         "Telnet enabled on LAN interface by default",
+        "CVE-2020-10987 NETGEAR command injection via httpd",
     ],
     "tp-link": [
         "CVE-2023-1389 TP-Link command injection via tddp protocol",
         "Cleartext HTTP management interface exposed on WAN",
         "Private RSA key embedded in firmware image",
+        "CVE-2021-4045 TP-Link Tapo unauthenticated RCE",
     ],
     "dlink": [
         "CVE-2019-16920 D-Link unauthenticated remote code execution via ping utility",
         "Outdated BusyBox with known shell escape",
         "Hardcoded backdoor account in /etc/passwd",
+        "CVE-2020-9544 D-Link buffer overflow in management interface",
     ],
     "asus": [
         "CVE-2018-20334 ASUS router CSRF leading to persistent access",
         "Outdated OpenSSL with ROBOT vulnerable cipher suites",
         "UPnP IGD service exposed on internet-facing interface",
+        "CVE-2023-39238 ASUS router RCE via iperf endpoint",
     ],
     "hikvision": [
         "CVE-2021-36260 Hikvision unauthenticated command injection",
         "RTSP stream accessible without authentication",
         "Outdated libssl with Heartbleed (CVE-2014-0160)",
+        "CVE-2014-4878 Hikvision hardcoded credentials in management service",
+    ],
+    "allnet": [
+        "Allnet devices historically ship with default credentials (admin/admin)",
+        "Outdated embedded Linux kernel — check for local privilege escalation",
+        "Unauthenticated management HTTP interface common on Allnet ALL range",
+        "CVE-2014-9118 Allnet router unauthenticated command injection via web interface",
+        "Possible hardcoded private keys or certificates in firmware image",
+    ],
+    "zyxel": [
+        "CVE-2022-0342 Zyxel authentication bypass in firewall/VPN products",
+        "CVE-2023-28771 Zyxel unauthenticated OS command injection",
+        "Hardcoded undocumented admin account in affected firmware versions",
+        "Outdated OpenSSL library with known TLS downgrade vulnerabilities",
+    ],
+    "mikrotik": [
+        "CVE-2018-14847 MikroTik Winbox credential disclosure",
+        "CVE-2019-3924 MikroTik RouterOS unauthenticated port forward bypass",
+        "Default credentials unchanged — no mandatory password change on first login",
+        "FTP service enabled by default with cleartext credential transmission",
+    ],
+    "ubiquiti": [
+        "CVE-2019-11812 Ubiquiti UniFi Network Server SSRF",
+        "CVE-2021-22909 Ubiquiti EdgeRouter password change without authentication",
+        "SSH with default credentials (ubnt/ubnt) on management interfaces",
+        "UniFi Cloud access may expose device to internet-accessible management",
+    ],
+    "linksys": [
+        "CVE-2014-8244 Linksys command injection in HNAP interface",
+        "CVE-2019-13564 Linksys RE6500 unauthenticated RCE via AJAX endpoint",
+        "Default admin password unchanged — web UI accessible without restriction",
+        "Outdated cURL with known SSL/TLS certificate validation bypass",
+    ],
+    "cisco": [
+        "CVE-2023-20109 Cisco IOS GET VPN key exfiltration",
+        "CVE-2022-20821 Cisco IOS XR privilege escalation",
+        "Telnet management interface may expose credentials in cleartext",
+        "SNMP v1/v2c with default community strings (public/private)",
+    ],
+    "dahua": [
+        "CVE-2021-33044 Dahua authentication bypass in web interface",
+        "CVE-2021-33045 Dahua IP camera credential bypass",
+        "RTSP and ONVIF streams accessible without authentication by default",
+        "Outdated firmware with known hardcoded service account",
+    ],
+    "axis": [
+        "CVE-2018-10660 Axis camera unauthenticated OS command injection",
+        "Default root password unchanged on initial deployment",
+        "ONVIF discovery service leaks device information without authentication",
+        "Outdated OpenSSL in embedded web server",
     ],
 }
 
@@ -79,10 +134,14 @@ def inject_known_issues(vendor: str, firmware_version: str = "") -> list[str]:
 
     # Generic fallback
     generic = [
-        "Possible default credentials (admin/admin or admin/password)",
-        "Outdated embedded Linux kernel — check for known privilege escalation CVEs",
-        "Unauthenticated management interface may be present on LAN",
-        "Firmware may contain hardcoded API keys or certificates",
+        "Possible default credentials (admin/admin or admin/password) — no password change enforced",
+        "Outdated embedded Linux kernel — check for known privilege escalation CVEs (e.g. Dirty COW, DirtyPipe)",
+        "Unauthenticated or weakly authenticated management interface may be present on LAN",
+        "Firmware may contain hardcoded API keys, certificates, or private keys",
+        "Cleartext protocols (HTTP, Telnet, FTP) may expose credentials in transit",
+        "No evidence of secure boot or firmware signature verification",
+        "BusyBox or other common embedded utilities may be outdated with known escapes",
+        "SNMP with default community strings may expose device configuration",
     ]
     log.info(
         "inject_known_issues_generic",
@@ -167,30 +226,42 @@ def _build_prompt(
     compact_json: str,
 ) -> str:
     """Build the analysis prompt for the LLM."""
-    return f"""You are a firmware security analyst.
+    return f"""You are a senior IoT/embedded-device security analyst producing a formal firmware security report for a SOC team.
 
-You receive compact JSON with:
-1) Device context
-2) SBOM summary
-3) Security findings
+DATA PROVIDED:
+- Device context: vendor, IP, MAC, observed open ports
+- SBOM: installed packages extracted from firmware (may be empty if EMBA could not fully extract)
+- Findings: security signals from EMBA static firmware analysis (may be sparse for container/quick scans)
 
-Task:
-- Produce a vendor-facing security report as **valid HTML** (no Markdown)
-- Use semantic HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <table>, <thead>, <tbody>, <tr>, <th>, <td>, <strong>, <em>, <code>, <span>
-- Do NOT include <html>, <head>, <body>, <style>, or <script> tags — only the inner report content
-- Sections: Overview, Key Risks, Detailed Findings, Recommended Fixes, Supply Chain Risks
-- Avoid duplicate findings and keep concise
-- Use only evidence present in input
-- Provide overall risk score out of 10
-- Color-code severity with inline CSS classes:
-  - <span class="severity-critical">CRITICAL</span>
-  - <span class="severity-high">HIGH</span>
-  - <span class="severity-medium">MEDIUM</span>
-  - <span class="severity-low">LOW</span>
-- For CVE tables, use: <table class="report-table"><thead><tr><th>CVE ID</th><th>CVSS</th><th>Component</th><th>Notes</th></tr></thead><tbody>...</tbody></table>
+MANDATORY ANALYSIS RULES:
+1. Analyse EVERY open port — identify the likely service running on it and all known risks for that service/version.
+2. If SBOM is empty or findings are sparse, USE YOUR EXPERT KNOWLEDGE of the device type, vendor, and open ports to identify probable vulnerabilities. Label inferred findings clearly as "(Inferred from device profile)".
+3. Do NOT generate a trivial low-score report for an unknown embedded IoT device. Devices with open ports and no documented hardening should score at least 5–7/10. Unknown devices with telnet, HTTP, or default credentials patterns should score higher.
+4. Risk score must reflect the HIGHEST confirmed or probable risk, not an average. Justify the score explicitly.
+5. Every section must be substantive — no one-line sections. Provide specific, actionable analysis.
+6. Name real CVEs where relevant to the device type, firmware era, and open services. If CVSS is unknown, estimate it.
+7. Be honest about analysis limitations (e.g. EMBA ran in quick mode) but still produce a useful security assessment using contextual reasoning.
 
-Start the report with:
+OUTPUT FORMAT — valid HTML only (no Markdown, no code fences):
+- Do NOT include <html>, <head>, <body>, <style>, or <script> tags — inner report content only
+- Use: <h2>, <h3>, <h4>, <p>, <ul>, <li>, <table>, <thead>, <tbody>, <tr>, <th>, <td>, <strong>, <em>, <code>, <span>
+- Severity CSS classes:
+  <span class="severity-critical">CRITICAL</span>
+  <span class="severity-high">HIGH</span>
+  <span class="severity-medium">MEDIUM</span>
+  <span class="severity-low">LOW</span>
+- CVE table format:
+  <table class="report-table"><thead><tr><th>CVE ID</th><th>CVSS</th><th>Component</th><th>Description</th><th>Severity</th></tr></thead><tbody>...</tbody></table>
+
+REQUIRED SECTIONS (include all, be thorough):
+
 <h2 class="risk-score">Risk Score: X/10</h2>
+<h3>Overview</h3>        — device profile, scan method used, any analysis limitations, overall security posture summary
+<h3>Attack Surface</h3>  — for EACH open port: likely service, known vulnerabilities, exposure risk
+<h3>Key Risks</h3>       — top 3–5 risks with severity labels, CVE references where applicable, business impact
+<h3>Detailed Findings</h3> — all findings with CVE table + individual finding paragraphs
+<h3>Recommended Fixes</h3> — at minimum 5 actionable, prioritised, device-specific recommendations
+<h3>Supply Chain Risks</h3> — third-party component risks, SBOM gaps, firmware update channel security
 
 JSON input:
 <JSON>
@@ -255,6 +326,57 @@ def _extract_fw_grep_lines(log_dir: str) -> list[str]:
     return lines
 
 
+_ANSI_ESCAPE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+
+
+def _extract_html_report_findings(log_dir: str) -> list[str]:
+    """
+    Extract security-relevant lines from EMBA's HTML report.
+
+    EMBA always generates ``html-report/index.html`` even when other output
+    files are absent (e.g. quick/container mode).  This extractor strips HTML
+    tags and hunts for CVEs, CWEs, and other signal keywords.
+    """
+    html_path = pathlib.Path(log_dir) / "html-report" / "index.html"
+    if not html_path.exists():
+        return []
+
+    findings: list[str] = []
+    try:
+        content = html_path.read_text(errors="ignore")
+        # Remove embedded JS/CSS first so their text doesn't pollute results
+        content = re.sub(r"<script[^>]*>.*?</script>", " ", content, flags=re.DOTALL | re.IGNORECASE)
+        content = re.sub(r"<style[^>]*>.*?</style>", " ", content, flags=re.DOTALL | re.IGNORECASE)
+        # Strip all HTML tags
+        text = re.sub(r"<[^>]+>", " ", content)
+        # Decode common HTML entities
+        text = re.sub(r"&amp;", "&", text)
+        text = re.sub(r"&lt;", "<", text)
+        text = re.sub(r"&gt;", ">", text)
+        text = re.sub(r"&[a-z]{2,6};", " ", text)
+        # Collapse whitespace
+        text = re.sub(r"\s+", " ", text)
+
+        # Split on sentence/row boundaries and filter for signal keywords
+        seen: set[str] = set()
+        for chunk in re.split(r"(?<=[.!?])\s+|[|\t]|\r?\n", text):
+            chunk = chunk.strip()
+            if len(chunk) < 20:
+                continue
+            if not any(s.lower() in chunk.lower() for s in SIGNALS):
+                continue
+            cleaned = _ANSI_ESCAPE.sub("", chunk)
+            cleaned = re.sub(r"\s+", " ", cleaned).strip()[:300]
+            if cleaned not in seen:
+                seen.add(cleaned)
+                findings.append(cleaned)
+
+    except Exception:
+        pass
+
+    return findings[:80]
+
+
 def _extract_sbom(log_dir: str, limit: int = 80) -> list[dict[str, Any]]:
     sbom_file = pathlib.Path(log_dir) / "s08_main_package_sbom.txt"
     if not sbom_file.exists():
@@ -291,9 +413,19 @@ def build_compact_findings_payload(
     max_findings: int,
     _override_lines: list[str] | None = None,
 ) -> dict[str, Any]:
-    raw_lines = _override_lines if _override_lines is not None else (
-        _extract_fw_grep_lines(log_dir) or extract_findings(log_dir, max_lines=max_findings * 2)
-    )
+    if _override_lines is not None:
+        raw_lines = _override_lines
+    else:
+        # Primary source: structured fw_grep.log
+        raw_lines = _extract_fw_grep_lines(log_dir)
+        # Secondary: EMBA HTML report (always generated, even in quick/container mode)
+        html_lines = _extract_html_report_findings(log_dir)
+        if html_lines:
+            log.info("html_report_findings_added", count=len(html_lines), log_dir=log_dir)
+            raw_lines = list({*raw_lines, *html_lines})  # deduplicate
+        # Fallback: broad keyword scan over all log/txt/csv files
+        if not raw_lines:
+            raw_lines = extract_findings(log_dir, max_lines=max_findings * 2)
 
     dedup: dict[tuple[str, str, str], dict[str, Any]] = {}
     for line in raw_lines:
