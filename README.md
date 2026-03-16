@@ -70,7 +70,7 @@ The RTX 5060 (8 GB VRAM) handles Qwen3 4B comfortably at full speed. For larger 
 - **Fully Dockerized (current recommended):** run `db`, `redis`, `api`, `worker`, `frontend`, and `ollama` as containers.
 - **Hybrid mode:** run Ollama on host and keep the rest in Docker.
 
-Both modes work with the same backend config (`OLLAMA_URL=http://localhost:11434`) because `api`/`worker` use `network_mode: host`.
+Both modes work with the same backend config (`OLLAMA_URL=http://localhost:11435`) because `api`/`worker` use `network_mode: host` and the Ollama container is published on `${OLLAMA_PORT:-11435}`.
 
 ## Quick Start
 

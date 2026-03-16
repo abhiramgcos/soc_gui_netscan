@@ -33,15 +33,16 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    network_mode: host
     environment:
-      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-soc_admin}:${POSTGRES_PASSWORD:-changeme_in_production}@db:5432/${POSTGRES_DB:-soc_network}"
-      DATABASE_URL_SYNC: "postgresql://${POSTGRES_USER:-soc_admin}:${POSTGRES_PASSWORD:-changeme_in_production}@db:5432/${POSTGRES_DB:-soc_network}"
-      REDIS_URL: "redis://redis:6379/0"
+      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-soc_admin}:${POSTGRES_PASSWORD:-changeme_in_production}@localhost:${DB_PORT:-5434}/${POSTGRES_DB:-soc_network}"
+      DATABASE_URL_SYNC: "postgresql://${POSTGRES_USER:-soc_admin}:${POSTGRES_PASSWORD:-changeme_in_production}@localhost:${DB_PORT:-5434}/${POSTGRES_DB:-soc_network}"
+      REDIS_URL: "redis://localhost:${REDIS_PORT:-6379}/0"
       LOG_LEVEL: ${LOG_LEVEL:-info}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
       WORKERS: ${API_WORKERS:-2}
       # Firmware analysis
-      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_URL: ${OLLAMA_URL:-http://localhost:${OLLAMA_PORT:-11435}}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5:4b}
       EMBA_PATH: ${EMBA_PATH:-/opt/emba/emba}
       EMBA_HOME: /opt/emba
@@ -53,8 +54,6 @@ services:
       TRIAGE_MAX_FINDINGS: ${TRIAGE_MAX_FINDINGS:-120}
       SCAN_INTERFACE: ${SCAN_INTERFACE:-eth0}
       EMBA_CONTAINER_NAME: ${EMBA_CONTAINER_NAME:-soc_emba}
-    ports:
-      - "${API_PORT:-8001}:8001"
     volumes:
       - ./backend:/app
       - ./db/devices:/app/db_devices
@@ -74,8 +73,6 @@ services:
     cap_add:
       - NET_RAW
       - NET_ADMIN
-    networks:
-      - soc_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 10s
@@ -95,14 +92,15 @@ services:
     command: ["python", "-m", "app.worker.main"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    network_mode: host
     environment:
-      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-soc_admin}:${POSTGRES_PASSWORD:-changeme_in_production}@db:5432/${POSTGRES_DB:-soc_network}"
-      DATABASE_URL_SYNC: "postgresql://${POSTGRES_USER:-soc_admin}:${POSTGRES_PASSWORD:-changeme_in_production}@db:5432/${POSTGRES_DB:-soc_network}"
-      REDIS_URL: "redis://redis:6379/0"
+      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-soc_admin}:${POSTGRES_PASSWORD:-changeme_in_production}@localhost:${DB_PORT:-5434}/${POSTGRES_DB:-soc_network}"
+      DATABASE_URL_SYNC: "postgresql://${POSTGRES_USER:-soc_admin}:${POSTGRES_PASSWORD:-changeme_in_production}@localhost:${DB_PORT:-5434}/${POSTGRES_DB:-soc_network}"
+      REDIS_URL: "redis://localhost:${REDIS_PORT:-6379}/0"
       LOG_LEVEL: ${LOG_LEVEL:-info}
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
       # Firmware analysis
-      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_URL: ${OLLAMA_URL:-http://localhost:${OLLAMA_PORT:-11435}}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5:4b}
       EMBA_PATH: ${EMBA_PATH:-/opt/emba/emba}
       EMBA_HOME: /opt/emba
@@ -134,10 +132,8 @@ services:
     cap_add:
       - NET_RAW
       - NET_ADMIN
-    networks:
-      - soc_net
     healthcheck:
-      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('redis', 6379), 2).close()"]
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 6379), 2).close()"]
       interval: 15s
       timeout: 5s
       retries: 5
